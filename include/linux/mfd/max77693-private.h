@@ -209,6 +209,9 @@ enum max77693_charger_battery_state {
 #define CHG_CNFG_00_CHG_MASK		0x1
 #define CHG_CNFG_00_BUCK_MASK		0x4
 
+/* MAX77693 CHG_CNFG_02 register */
+#define CHG_CNFG_02_CC_MASK		0x3F
+
 /* MAX77693_CHG_REG_CHG_CNFG_01 register */
 #define CHG_CNFG_01_FCHGTIME_SHIFT	0
 #define CHG_CNFG_01_CHGRSTRT_SHIFT	4

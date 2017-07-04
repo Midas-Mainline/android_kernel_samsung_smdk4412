@@ -977,7 +977,6 @@
 };
 
 &mshc_0 {
-	num-slots = <1>;
 	broken-cd;
 	non-removable;
 	card-detect-delay = <200>;

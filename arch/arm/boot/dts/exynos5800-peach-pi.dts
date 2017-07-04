@@ -665,7 +665,6 @@
 /* eMMC flash */
 &mmc_0 {
 	status = "okay";
-	num-slots = <1>;
 	mmc-hs200-1_8v;
 	mmc-hs400-1_8v;
 	cap-mmc-highspeed;
@@ -684,7 +683,6 @@
 /* WiFi SDIO module */
 &mmc_1 {
 	status = "okay";
-	num-slots = <1>;
 	non-removable;
 	cap-sdio-irq;
 	keep-power-in-suspend;
@@ -704,7 +702,6 @@
 /* uSD card */
 &mmc_2 {
 	status = "okay";
-	num-slots = <1>;
 	cap-sd-highspeed;
 	card-detect-delay = <200>;
 	clock-frequency = <400000000>;

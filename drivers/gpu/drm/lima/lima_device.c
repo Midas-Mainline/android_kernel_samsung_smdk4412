@@ -110,12 +110,13 @@ static int lima_clk_init(struct lima_device *dev)
 
 	dev->reset = devm_reset_control_get_optional(dev->dev, NULL);
 	if (IS_ERR(dev->reset)) {
-		err = PTR_ERR(dev->reset);
-		goto error_out1;
-	} else if (dev->reset != NULL) {
-		err = reset_control_deassert(dev->reset);
-		if (err)
-			goto error_out1;
+		dev->reset = NULL;
+	} else {
+		if (dev->reset != NULL) {
+			err = reset_control_deassert(dev->reset);
+			if (err)
+				goto error_out1;
+		}
 	}
 
 	return 0;

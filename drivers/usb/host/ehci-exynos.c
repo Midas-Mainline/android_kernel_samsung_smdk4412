@@ -32,6 +32,8 @@
 	(EHCI_INSNREG00_ENA_INCR16 | EHCI_INSNREG00_ENA_INCR8 |	\
 	 EHCI_INSNREG00_ENA_INCR4 | EHCI_INSNREG00_ENA_INCRX_ALIGN)
 
+#define EHCI_INSNREG00_OHCI_SUSP_LEGACY (0x1 << 20)
+
 static const char hcd_name[] = "ehci-exynos";
 static struct hc_driver __read_mostly exynos_ehci_hc_driver;
 
@@ -210,7 +212,7 @@ skip_phy:
 	ehci->caps = hcd->regs;
 
 	/* DMA burst Enable */
-	writel(EHCI_INSNREG00_ENABLE_DMA_BURST, EHCI_INSNREG00(hcd->regs));
+	writel(EHCI_INSNREG00_ENABLE_DMA_BURST | EHCI_INSNREG00_OHCI_SUSP_LEGACY, EHCI_INSNREG00(hcd->regs));
 
 	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (err) {

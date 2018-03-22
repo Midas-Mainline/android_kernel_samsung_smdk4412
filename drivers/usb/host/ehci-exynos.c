@@ -21,6 +21,8 @@
 
 #include "ehci.h"
 
+#define UGLY_HACK
+
 #define DRIVER_DESC "EHCI EXYNOS driver"
 
 #define EHCI_INSNREG00(base)			(base + 0x90)
@@ -42,6 +44,9 @@ static struct hc_driver __read_mostly exynos_ehci_hc_driver;
 struct exynos_ehci_hcd {
 	struct clk *clk;
 	struct phy *phy[PHY_NUMBER];
+#ifdef UGLY_HACK
+	bool power_on;
+#endif
 };
 
 #define to_exynos_ehci(hcd) (struct exynos_ehci_hcd *)(hcd_to_ehci(hcd)->priv)
@@ -116,6 +121,69 @@ static void exynos_ehci_phy_disable(struct device *dev)
 		if (!IS_ERR(exynos_ehci->phy[i]))
 			phy_power_off(exynos_ehci->phy[i]);
 }
+
+#ifdef UGLY_HACK
+static ssize_t show_ehci_power(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct exynos_ehci_hcd *exynos_ehci = to_exynos_ehci(hcd);
+
+	return snprintf(buf, PAGE_SIZE, "EHCI Power %s\n", exynos_ehci->power_on ? "on" : "off");
+}
+
+static ssize_t store_ehci_power(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf, size_t count)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct exynos_ehci_hcd *exynos_ehci = to_exynos_ehci(hcd);
+
+	int power_on;
+	int irq;
+	int ret = 0;
+
+	if (sscanf(buf, "%d", &power_on) != 1)
+		return -EINVAL;
+
+	device_lock(dev);
+	if (!power_on && exynos_ehci->power_on) {
+		dev_info(dev, "Powering off EHCI\n");
+		exynos_ehci->power_on = false;
+		usb_remove_hcd(hcd);
+		exynos_ehci_phy_disable(dev);
+	} else if (power_on) {
+		dev_info(dev, "Powering on EHCI\n");
+		if (exynos_ehci->power_on)
+			usb_remove_hcd(hcd);
+
+		exynos_ehci_phy_enable(dev);
+
+		writel(EHCI_INSNREG00_ENABLE_DMA_BURST | EHCI_INSNREG00_OHCI_SUSP_LEGACY, EHCI_INSNREG00(hcd->regs));
+
+		irq = platform_get_irq(pdev, 0);
+		if (!irq) {
+			dev_err(dev, "IRQ get failed!\n");
+			goto err;
+		}
+
+		ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
+		if (ret < 0) {
+			dev_err(dev, "Power on failed!\n");
+			goto err;
+		}
+		exynos_ehci->power_on = true;
+	}
+err:
+	device_unlock(dev);
+	return count;
+}
+
+static DEVICE_ATTR(ehci_power, 0664, show_ehci_power, store_ehci_power);
+#endif
 
 static void exynos_setup_vbus_gpio(struct device *dev)
 {
@@ -223,6 +291,10 @@ skip_phy:
 
 	platform_set_drvdata(pdev, hcd);
 
+#ifdef UGLY_HACK
+	device_create_file(hcd->self.controller, &dev_attr_ehci_power);
+	exynos_ehci->power_on = true;
+#endif
 	return 0;
 
 fail_add_hcd:

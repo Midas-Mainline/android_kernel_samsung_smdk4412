@@ -171,7 +171,6 @@ static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
 	ret = 0;
 
 	while (to_read) {
-		dev_info(&dev->intf->dev, "%d bytes left to read\n", to_read);
 		skb = skb_dequeue(&dev->in_queue);
 		if (!skb) {
 			/* no data waiting:
@@ -190,7 +189,6 @@ static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
 			read += to_read;
 			to_read = 0;
 			skb_pull(skb, to_read);
-			dev_info(&dev->intf->dev, "new skb length = %d\n", skb->len);
 			skb_queue_head(&dev->in_queue, skb);
 		} else {
 			/* copy just skb->len */
@@ -204,7 +202,6 @@ static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
 			dev_kfree_skb_any(skb);
 		}
 	}
-	dev_info(&dev->intf->dev, "read %d bytes!\n", read);
 	ret = read;
 end:
 	mutex_unlock(&dev->io_mutex);
@@ -296,11 +293,7 @@ static unsigned int xmm6262_boot_poll(struct file *file, struct poll_table_struc
 	struct xmm6262 *dev = file->private_data;
 
 	if (!skb_queue_empty(&dev->in_queue)) {
-		dev_info(&dev->intf->dev, "skb queue len: %u - head len %u\n", skb_queue_len(&dev->in_queue),
-			skb_peek(&dev->in_queue)->len);
 		return POLLIN;
-	} else {
-		dev_err(&dev->intf->dev, "skb queue len: %u\n", skb_queue_len(&dev->in_queue));
 	}
 
 	return 0;

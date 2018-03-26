@@ -348,6 +348,9 @@ static int xmm6262_probe(struct usb_interface *intf,
 	if (!dev)
 		return -ENOMEM;
 
+	mutex_init(&dev->rx_mutex);
+	mutex_init(&dev->io_mutex);
+
 	dev->udev = usb_get_dev(interface_to_usbdev(intf));
 	dev->intf = intf;
 	data_intf = usb_ifnum_to_if(dev->udev,
@@ -384,9 +387,6 @@ static int xmm6262_probe(struct usb_interface *intf,
 	dev->bulk_out_addr = bulk_out->bEndpointAddress;
 
 	dev_info(&intf->dev, "Loaded XMM6262 boot serial device!\n");
-
-	mutex_init(&dev->rx_mutex);
-	mutex_init(&dev->io_mutex);
 
 	return 0;
 }

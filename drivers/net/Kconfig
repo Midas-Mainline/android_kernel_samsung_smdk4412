@@ -573,6 +573,7 @@ config USB4_NET
 	  called thunderbolt-net.
 
 source "drivers/net/hyperv/Kconfig"
+source "drivers/net/sipc/Kconfig"
 
 config NETDEVSIM
 	tristate "Simulated networking device"

@@ -74,7 +74,7 @@ static int sipc_start_rx(struct sipc_usb_ep *ep)
 
 	urb = ep->in_urb;
 	urb->transfer_flags = 0;
-	usb_fill_bulk_urb(urb, ep->udev, ep->bulk_in_addr,
+	usb_fill_bulk_urb(urb, ep->udev, usb_rcvbulkpipe(ep->udev, ep->bulk_in_addr),
 			ep->in_buf, ep->in_buf_size, sipc_rx_complete,
 			ep);
 
@@ -103,8 +103,8 @@ static int sipc_link_transmit(struct sipc_link *link, struct sk_buff *skb)
 		return -ENOMEM;
 
 	urb->transfer_flags = URB_ZERO_PACKET;
-	usb_fill_bulk_urb(urb, ep->udev, ep->bulk_out_addr, skb->data, skb->len,
-			sipc_tx_complete, skb);
+	usb_fill_bulk_urb(urb, ep->udev, usb_sndbulkpipe(ep->udev, ep->bulk_out_addr),
+			skb->data, skb->len, sipc_tx_complete, skb);
 
 	ret = usb_submit_urb(urb, GFP_KERNEL);
 	if (ret < 0) {

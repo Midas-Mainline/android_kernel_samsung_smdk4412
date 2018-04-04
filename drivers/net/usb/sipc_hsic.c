@@ -249,6 +249,19 @@ urb_free:
 
 static void sipc_disconnect(struct usb_interface *intf)
 {
+	struct sipc_usb_ep *ep = usb_get_intfdata(intf);
+	int fmt;
+
+	fmt = usb_to_sipc_format(ep->ep);
+	if (fmt < 0)
+		goto invalid_format;
+
+	sipc_clear_link(fmt);
+	if (fmt == SAMSUNG_IPC_FORMAT_RAW)
+		sipc_clear_link(SAMSUNG_IPC_FORMAT_MULTI_RAW);
+
+invalid_format:
+	usb_free_urb(ep->in_urb);
 }
 
 static struct usb_device_id sipc_idtable[] = {

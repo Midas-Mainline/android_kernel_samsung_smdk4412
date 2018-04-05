@@ -61,7 +61,6 @@ static void xmm6262_boot_rx_callback(struct urb *urb)
 		ret = urb->status;
 		goto error;
 	} else if (urb->actual_length) {
-		dev_info(&dev->intf->dev, "queued %d bytes of data\n", urb->actual_length);
 		skb = alloc_skb(urb->actual_length, GFP_ATOMIC);
 		if (!skb) {
 			dev_err(&dev->intf->dev, "failed to allocate skb\n");
@@ -223,7 +222,6 @@ void xmm6262_boot_write_callback(struct urb *urb)
 			dev_err(&dev->intf->dev, "nonzero write bulk status received: %d\n", urb->status);
 	}
 
-	dev_info(&dev->intf->dev, "wrote %d bytes of data\n", urb->actual_length);
 	kfree(urb->transfer_buffer);
 	usb_free_urb(urb);
 }

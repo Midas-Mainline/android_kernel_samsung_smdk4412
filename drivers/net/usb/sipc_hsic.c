@@ -160,7 +160,7 @@ static int sipc_probe(struct usb_interface *intf, const struct usb_device_id *id
 	unsigned int fmt;
 
 	buflen = intf->altsetting->extralen;
-	buf = intf->altsetting->endpoint->extra;
+	buf = intf->altsetting->extra;
 
 	if (!buflen) {
 		if (intf->cur_altsetting->endpoint) {

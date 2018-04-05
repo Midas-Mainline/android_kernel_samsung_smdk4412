@@ -162,6 +162,11 @@ static int sipc_probe(struct usb_interface *intf, const struct usb_device_id *id
 	buflen = intf->altsetting->extralen;
 	buf = intf->altsetting->extra;
 
+	if (intf->altsetting->desc.bInterfaceSubClass != USB_CDC_SUBCLASS_ACM) {
+		dev_info(&intf->dev, "Skipping non-ACM endpoint\n");
+		return -EINVAL;
+	}
+
 	if (!buflen) {
 		if (intf->cur_altsetting->endpoint) {
 			buflen = intf->cur_altsetting->endpoint->extralen;
@@ -215,6 +220,8 @@ static int sipc_probe(struct usb_interface *intf, const struct usb_device_id *id
 		dev_err(&intf->dev, "Failed to claim interface\n");
 		goto urb_free;
 	}
+
+	usb_set_intfdata(intf, ep);
 
 	fmt = usb_to_sipc_format(ep->ep);
 	if (fmt < 0) {

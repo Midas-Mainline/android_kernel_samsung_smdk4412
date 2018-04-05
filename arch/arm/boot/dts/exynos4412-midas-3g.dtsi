@@ -99,7 +99,6 @@
         reset-req-gpios = <&gpm3 3 GPIO_ACTIVE_HIGH>;
         pda-active-gpios = <&gpf1 6 GPIO_ACTIVE_HIGH>;
         link-active-gpios = <&gpf1 1 GPIO_ACTIVE_HIGH>;
-        link-hostwake-gpios = <&gpx1 1 GPIO_ACTIVE_HIGH>;
         link-slavewake-gpios = <&gpx1 0 GPIO_ACTIVE_HIGH>;
         suspend-req-gpios = <&gpm2 4 GPIO_ACTIVE_HIGH>;
 

@@ -506,6 +506,16 @@
 	};
 };
 
+&ehci {
+	samsung,vbus-gpio = <&gpf0 7 0>;
+	status = "okay";
+
+	port@1 {
+		/* HSIC0 (XMM6262) */
+		status = "okay";
+	};
+};
+
 &exynos_usbphy {
 	vbus-supply = <&esafeout1_reg>;
 	status = "okay";
@@ -849,6 +859,7 @@
 				regulator-name = "VHSIC_1.0V";
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <1000000>;
+				regulator-always-on;
 				regulator-state-mem {
 					regulator-on-in-suspend;
 				};
@@ -858,6 +869,7 @@
 				regulator-name = "VHSIC_1.8V";
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
 				regulator-state-mem {
 					regulator-on-in-suspend;
 				};

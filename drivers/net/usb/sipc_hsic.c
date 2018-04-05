@@ -257,6 +257,7 @@ urb_free:
 static void sipc_disconnect(struct usb_interface *intf)
 {
 	struct sipc_usb_ep *ep = usb_get_intfdata(intf);
+	struct usb_driver *usbdrv = to_usb_driver(intf->dev.driver);
 	int fmt;
 
 	fmt = usb_to_sipc_format(ep->ep);
@@ -268,6 +269,8 @@ static void sipc_disconnect(struct usb_interface *intf)
 		sipc_clear_link(SAMSUNG_IPC_FORMAT_MULTI_RAW);
 
 invalid_format:
+	usb_driver_release_interface(usbdrv, ep->data_intf);
+	usb_kill_urb(ep->in_urb);
 	usb_free_urb(ep->in_urb);
 }
 

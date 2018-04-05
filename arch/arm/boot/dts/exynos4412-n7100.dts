@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /dts-v1/;
 #include "exynos4412-galaxynote2.dtsi"
+#include "exynos4412-midas-3g.dtsi"
 
 / {
 	model = "Samsung Galaxy Note 2 (GT-N7100) based on Exynos4412";

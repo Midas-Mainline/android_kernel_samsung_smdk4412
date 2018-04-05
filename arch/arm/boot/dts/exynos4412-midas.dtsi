@@ -16,7 +16,6 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/clock/maxim,max77686.h>
 #include <dt-bindings/pinctrl/samsung.h>
-#include <dt-bindings/net/samsung_ipc.h>
 
 / {
 	compatible = "samsung,midas", "samsung,exynos4412", "samsung,exynos4";
@@ -307,83 +306,6 @@
 					remote-endpoint = <&hdmi_to_mhl>;
 				};
 			};
-		};
-	};
-
-	modem {
-		compatible = "samsung,sipc4-modem";
-		protocol = <SAMSUNG_IPC_VERSION_40>;
-		#size-cells = <0>;
-		#address-cells = <1>;
-
-		ipc-fmt-channel@1 {
-			reg = <0x1>;
-			format = <SAMSUNG_IPC_FORMAT_FMT>;
-			type = <SAMSUNG_IPC_TYPE_MISC>;
-			label = "umts_ipc";
-		};
-
-		ipc-rfs-channel@41 {
-			reg = <0x41>;
-			format = <SAMSUNG_IPC_FORMAT_RFS>;
-			type = <SAMSUNG_IPC_TYPE_MISC>;
-			label = "umts_rfs";
-		};
-
-		ipc-raw-channel@2a {
-			reg = <0x2a>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_NETDEV>;
-			label = "rmnet0";
-		};
-
-		ipc-raw-channel@2b {
-			reg = <0x2b>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_NETDEV>;
-			label = "rmnet1";
-		};
-
-		ipc-raw-channel@2c {
-			reg = <0x2c>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_NETDEV>;
-			label = "rmnet2";
-		};
-
-		ipc-raw-channel@21 {
-			reg = <0x21>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_MISC>;
-			label = "umts_csd";
-		};
-
-		ipc-raw-channel@39 {
-			reg = <0x39>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_MISC>;
-			label = "umts_router";
-		};
-
-		ipc-raw-channel@3f {
-			reg = <0x3f>;
-			format = <SAMSUNG_IPC_FORMAT_RAW>;
-			type = <SAMSUNG_IPC_TYPE_MISC>;
-			label = "umts_loopback";
-		};
-
-		ipc-multi-raw-channel@1 {
-			reg = <0x1>;
-			format = <SAMSUNG_IPC_FORMAT_MULTI_RAW>;
-			type = <SAMSUNG_IPC_TYPE_DUMMY>;
-			label = "multipdp";
-		};
-
-		ipc-cmd-channel@1 {
-			reg = <0x1>;
-			format = <SAMSUNG_IPC_FORMAT_CMD>;
-			type = <SAMSUNG_IPC_TYPE_DUMMY>;
-			label = "cmd";
 		};
 	};
 

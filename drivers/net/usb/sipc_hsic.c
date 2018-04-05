@@ -78,7 +78,7 @@ static int sipc_start_rx(struct sipc_usb_ep *ep)
 			ep->in_buf, ep->in_buf_size, sipc_rx_complete,
 			ep);
 
-	ret = usb_submit_urb(urb, GFP_KERNEL);
+	ret = usb_submit_urb(urb, GFP_ATOMIC);
 	if (ret)
 		dev_err(&ep->udev->dev, "Failed to submit rx urb: %d\n", ret);
 

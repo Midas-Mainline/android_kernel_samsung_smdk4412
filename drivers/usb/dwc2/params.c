@@ -293,8 +293,8 @@ static void dwc2_set_default_params(struct dwc2_hsotg *hsotg)
 	p->reload_ctl = (hw->snpsid >= DWC2_CORE_REV_2_92a);
 	p->uframe_sched = true;
 	p->external_id_pin_ctl = false;
-	p->lpm = true;
-	p->lpm_clock_gating = true;
+	p->lpm = false;
+	p->lpm_clock_gating = false;
 	p->besl = true;
 	p->hird_threshold_en = true;
 	p->hird_threshold = 4;
@@ -758,7 +758,7 @@ int dwc2_get_hwparams(struct dwc2_hsotg *hsotg)
 	hw->i2c_enable = !!(hwcfg3 & GHWCFG3_I2C);
 	hw->total_fifo_size = (hwcfg3 & GHWCFG3_DFIFO_DEPTH_MASK) >>
 			      GHWCFG3_DFIFO_DEPTH_SHIFT;
-	hw->lpm_mode = !!(hwcfg3 & GHWCFG3_OTG_LPM_EN);
+	hw->lpm_mode = false; //!!(hwcfg3 & GHWCFG3_OTG_LPM_EN);
 
 	/* hwcfg4 */
 	hw->en_multiple_tx_fifo = !!(hwcfg4 & GHWCFG4_DED_FIFO_EN);

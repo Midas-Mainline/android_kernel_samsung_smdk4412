@@ -552,8 +552,7 @@ static int acpi_button_remove(struct acpi_device *device)
 	return 0;
 }
 
-static int param_set_lid_init_state(const char *val,
-				    const struct kernel_param *kp)
+static int param_set_lid_init_state(const char *val, struct kernel_param *kp)
 {
 	int result = 0;
 
@@ -568,8 +567,7 @@ static int param_set_lid_init_state(const char *val,
 	return result;
 }
 
-static int param_get_lid_init_state(char *buffer,
-				    const struct kernel_param *kp)
+static int param_get_lid_init_state(char *buffer, struct kernel_param *kp)
 {
 	switch (lid_init_state) {
 	case ACPI_BUTTON_LID_INIT_OPEN:

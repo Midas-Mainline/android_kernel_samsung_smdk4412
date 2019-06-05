@@ -12,28 +12,6 @@
 		device_type = "memory";
 		reg =  <0x40000000 0x80000000>;
 	};
-
-	firmware {
-		android {
-			compatible = "android,firmware";
-			vbmeta {
-				compatible = "android,vbmeta";
-				parts = "SYSTEM";
-			};
-
-			fstab {
-				compatible = "android,fstab";
-				system {
-					compatible = "android,system";
-					dev = "/dev/block/platform/soc/12550000.mmc/by-name/SYSTEM";
-					type = "ext4";
-					mnt_flags = "rw,noatime";
-					fsmgr_flags = "wait";
-			        };
-			};
-		};
-	};
-
 };
 
 &i2c0_bus {

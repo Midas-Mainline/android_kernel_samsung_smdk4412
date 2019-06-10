@@ -155,6 +155,7 @@
 					regulator-name = "CHARGER";
 					regulator-min-microamp = <60000>;
 					regulator-max-microamp = <2580000>;
+					regulator-always-on;
 				};
 			};
 

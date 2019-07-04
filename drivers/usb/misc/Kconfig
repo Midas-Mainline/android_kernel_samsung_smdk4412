@@ -284,3 +284,8 @@ config BRCM_USB_PINMAP
 	  This option enables support for remapping some USB external
 	  signals, which are typically on dedicated pins on the chip,
 	  to any gpio.
+
+config USB_XMM6262_BOOT
+	tristate "Samsung IPC USB modem firmware download module"
+        help
+          Say Y here if you want to use a Samsung IPC USB modem.

@@ -1164,5 +1164,3 @@ dtb-$(CONFIG_ARCH_ASPEED) += \
 	aspeed-bmc-opp-witherspoon.dtb \
 	aspeed-bmc-opp-zaius.dtb \
 	aspeed-bmc-quanta-q71l.dtb
-
-subdir-y += overlay

@@ -127,6 +127,12 @@
 				vsync-len = <2>;
 			};
 		};
+
+		port {
+			dsi_in: endpoint {
+				status = "okay";
+			};
+		};
 	};
 };
 

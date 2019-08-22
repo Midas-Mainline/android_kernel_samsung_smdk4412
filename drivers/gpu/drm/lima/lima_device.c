@@ -2,6 +2,7 @@
 /* Copyright 2017-2018 Qiang Yu <yuq825@gmail.com> */
 
 #include <linux/regulator/consumer.h>
+#include <linux/errno.h>
 #include <linux/reset.h>
 #include <linux/clk.h>
 #include <linux/dma-mapping.h>

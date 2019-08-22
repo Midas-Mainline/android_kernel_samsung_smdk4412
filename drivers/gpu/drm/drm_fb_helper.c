@@ -888,6 +888,9 @@ void drm_fb_helper_fini(struct drm_fb_helper *fb_helper)
 	}
 	fb_helper->fbdev = NULL;
 
+	cancel_work_sync(&fb_helper->resume_work);
+	cancel_work_sync(&fb_helper->dirty_work);
+
 	mutex_lock(&kernel_fb_helper_lock);
 	if (!list_empty(&fb_helper->kernel_fb_list)) {
 		list_del(&fb_helper->kernel_fb_list);
@@ -1353,9 +1356,9 @@ int drm_fb_helper_check_var(struct fb_var_screeninfo *var,
 	 * to KMS, hence fail if different settings are requested.
 	 */
 	if (var->bits_per_pixel != fb->format->cpp[0] * 8 ||
-	    var->xres != fb->width || var->yres != fb->height ||
-	    var->xres_virtual != fb->width || var->yres_virtual != fb->height) {
-		DRM_DEBUG("fb userspace requested width/height/bpp different than current fb "
+	    var->xres > fb->width || var->yres > fb->height ||
+	    var->xres_virtual > fb->width || var->yres_virtual > fb->height) {
+		DRM_DEBUG("fb requested width/height/bpp can't fit in current fb "
 			  "request %dx%d-%d (virtual %dx%d) > %dx%d-%d\n",
 			  var->xres, var->yres, var->bits_per_pixel,
 			  var->xres_virtual, var->yres_virtual,

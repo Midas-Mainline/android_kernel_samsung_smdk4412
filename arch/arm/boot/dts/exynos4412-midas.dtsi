@@ -309,6 +309,12 @@
 		       };
 		};
 	};
+
+	silly {
+		compatible = "stupid,regulator-loader";
+		clocks = <&clock CLK_SCLK_MIPI0>;
+		default-supply = <&ldo8_reg>;
+	};
 };
 
 &adc {

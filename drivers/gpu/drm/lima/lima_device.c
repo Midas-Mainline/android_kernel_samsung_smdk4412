@@ -141,13 +141,15 @@ static int lima_regulator_init(struct lima_device *dev)
 	if (IS_ERR(dev->regulator)) {
 		ret = PTR_ERR(dev->regulator);
 		dev->regulator = NULL;
-		if (ret == -ENODEV)
-			return 0;
 		dev_err(dev->dev, "failed to get regulator: %ld\n", PTR_ERR(dev->regulator));
+		if (ret == -ENODEV || ret == -EPROBE_DEFER)
+			return 0;
 		return ret;
 	}
 
-	ret = regulator_enable(dev->regulator);
+	if (dev->regulator)
+		ret = regulator_enable(dev->regulator);
+
 	if (ret < 0) {
 		dev_err(dev->dev, "failed to enable regulator: %d\n", ret);
 		return ret;

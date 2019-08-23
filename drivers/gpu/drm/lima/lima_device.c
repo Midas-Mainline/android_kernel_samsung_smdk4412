@@ -4,6 +4,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/errno.h>
 #include <linux/reset.h>
+#include <linux/workqueue.h>
 #include <linux/clk.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
@@ -134,6 +135,26 @@ static void lima_clk_fini(struct lima_device *dev)
 	clk_disable_unprepare(dev->clk_bus);
 }
 
+static struct lima_device *g_lima_dev;
+static int lima_regulator_init(struct lima_device *dev);
+
+static void regulator_load_fn(struct work_struct *work);
+static DECLARE_DELAYED_WORK(regulator_load_delayedwork, regulator_load_fn);
+static void regulator_load_fn(struct work_struct *work)
+{
+	int ret;
+
+	pr_err("%s: init\n", __func__);
+
+	if (!g_lima_dev) {
+		pr_err("%s: g_lima_dev == NULL\n", __func__);
+		schedule_delayed_work(&regulator_load_delayedwork, msecs_to_jiffies(100));
+		return;
+	}
+
+	lima_regulator_init(g_lima_dev);
+}
+
 static int lima_regulator_init(struct lima_device *dev)
 {
 	int ret;
@@ -141,7 +162,11 @@ static int lima_regulator_init(struct lima_device *dev)
 	if (IS_ERR(dev->regulator)) {
 		ret = PTR_ERR(dev->regulator);
 		dev->regulator = NULL;
-		dev_err(dev->dev, "failed to get regulator: %ld\n", PTR_ERR(dev->regulator));
+		dev_err(dev->dev, "failed to get regulator: %ld\n", ret);
+
+		if (ret == -EPROBE_DEFER)
+			schedule_delayed_work(&regulator_load_delayedwork, msecs_to_jiffies(25));
+
 		if (ret == -ENODEV || ret == -EPROBE_DEFER)
 			return 0;
 		return ret;
@@ -348,6 +373,7 @@ int lima_device_init(struct lima_device *ldev)
 		lima_bcast_enable(ldev);
 	}
 
+	g_lima_dev = ldev;
 	return 0;
 
 err_out6:

@@ -30,11 +30,11 @@ struct lima_sched_task {
 	struct lima_vm *vm;
 	void *frame;
 
-	struct dma_fence **dep;
+	struct fence **dep;
 	int num_dep;
 	int max_dep;
 
-	struct dma_fence *fence;
+	struct fence *fence;
 };
 
 #define LIMA_SCHED_PIPE_MAX_MMU 4
@@ -65,7 +65,7 @@ struct lima_sched_pipe {
 
 struct lima_sched_task *lima_sched_task_create(struct lima_vm *vm, void *frame);
 void lima_sched_task_delete(struct lima_sched_task *task);
-int lima_sched_task_add_dep(struct lima_sched_task *task, struct dma_fence *fence);
+int lima_sched_task_add_dep(struct lima_sched_task *task, struct fence *fence);
 int lima_sched_task_queue(struct lima_sched_pipe *pipe, struct lima_sched_task *task);
 
 int lima_sched_pipe_init(struct lima_sched_pipe *pipe, const char *name);

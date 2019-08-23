@@ -3,44 +3,44 @@
 #include "lima.h"
 
 struct lima_fence {
-	struct dma_fence base;
+	struct fence base;
 	struct lima_sched_pipe *pipe;
 };
 
-static inline struct lima_fence *to_lima_fence(struct dma_fence *fence)
+static inline struct lima_fence *to_lima_fence(struct fence *fence)
 {
 	return container_of(fence, struct lima_fence, base);
 }
 
-static const char *lima_fence_get_driver_name(struct dma_fence *fence)
+static const char *lima_fence_get_driver_name(struct fence *fence)
 {
 	return "lima";
 }
 
-static const char *lima_fence_get_timeline_name(struct dma_fence *fence)
+static const char *lima_fence_get_timeline_name(struct fence *fence)
 {
 	struct lima_fence *f = to_lima_fence(fence);
 
 	return f->pipe->name;
 }
 
-static bool lima_fence_enable_signaling(struct dma_fence *fence)
+static bool lima_fence_enable_signaling(struct fence *fence)
 {
 	return true;
 }
 
-static void lima_fence_release(struct dma_fence *fence)
+static void lima_fence_release(struct fence *fence)
 {
 	struct lima_fence *f = to_lima_fence(fence);
 
 	kfree_rcu(f, base.rcu);
 }
 
-static const struct dma_fence_ops lima_fence_ops = {
+static const struct fence_ops lima_fence_ops = {
 	.get_driver_name = lima_fence_get_driver_name,
 	.get_timeline_name = lima_fence_get_timeline_name,
 	.enable_signaling = lima_fence_enable_signaling,
-	.wait = dma_fence_default_wait,
+	.wait = fence_default_wait,
 	.release = lima_fence_release,
 };
 
@@ -63,10 +63,10 @@ void lima_sched_task_delete(struct lima_sched_task *task)
 	int i;
 
 	if (task->fence)
-		dma_fence_put(task->fence);
+		fence_put(task->fence);
 
 	for (i = 0; i < task->num_dep; i++)
-		dma_fence_put(task->dep[i]);
+		fence_put(task->dep[i]);
 
 	if (task->dep)
 		kfree(task->dep);
@@ -80,7 +80,7 @@ void lima_sched_task_delete(struct lima_sched_task *task)
 	kfree(task);
 }
 
-int lima_sched_task_add_dep(struct lima_sched_task *task, struct dma_fence *fence)
+int lima_sched_task_add_dep(struct lima_sched_task *task, struct fence *fence)
 {
 	int i, new_dep = 4;
 
@@ -95,11 +95,11 @@ int lima_sched_task_add_dep(struct lima_sched_task *task, struct dma_fence *fenc
 		task->dep = dep;
 	}
 
-	dma_fence_get(fence);
+	fence_get(fence);
 	for (i = 0; i < task->num_dep; i++) {
 		if (task->dep[i]->context == fence->context &&
-		    dma_fence_is_later(fence, task->dep[i])) {
-			dma_fence_put(task->dep[i]);
+		    fence_is_later(fence, task->dep[i])) {
+			fence_put(task->dep[i]);
 			task->dep[i] = fence;
 			return 0;
 		}
@@ -120,13 +120,13 @@ int lima_sched_task_queue(struct lima_sched_pipe *pipe, struct lima_sched_task *
 
 	spin_lock(&pipe->lock);
 
-	dma_fence_init(&fence->base, &lima_fence_ops, &pipe->fence_lock,
+	fence_init(&fence->base, &lima_fence_ops, &pipe->fence_lock,
 		       pipe->fence_context, ++pipe->fence_seqno);
 	task->fence = &fence->base;
 
 	/* for caller usage of the fence, otherwise pipe worker 
 	 * may consumed the fence */
-	dma_fence_get(task->fence);
+	fence_get(task->fence);
 
 	list_add_tail(&task->list, &pipe->queue);
 
@@ -148,13 +148,13 @@ static struct lima_sched_task *lima_sched_pipe_get_task(struct lima_sched_pipe *
 
 #define LIMA_WORKER_WAIT_TIMEOUT_NS 1000000000
 
-static int lima_sched_pipe_worker_wait_fence(struct dma_fence *fence)
+static int lima_sched_pipe_worker_wait_fence(struct fence *fence)
 {
 	int ret;
 	unsigned long timeout = nsecs_to_jiffies(LIMA_WORKER_WAIT_TIMEOUT_NS);
 
 	while (1) {
-		ret = dma_fence_wait_timeout(fence, true, timeout);
+		ret = fence_wait_timeout(fence, true, timeout);
 
 		/* interrupted by signal, may be kthread stop */
 		if (ret == -ERESTARTSYS) {
@@ -266,7 +266,7 @@ static int lima_sched_pipe_worker(void *param)
 					lima_mmu_page_fault_resume(pipe->mmu[i]);
 			}
 			else
-				dma_fence_signal(task->fence);
+				fence_signal(task->fence);
 		}
 
 	abort:
@@ -288,7 +288,7 @@ int lima_sched_pipe_init(struct lima_sched_pipe *pipe, const char *name)
 	pipe->name = name;
 	spin_lock_init(&pipe->lock);
 	INIT_LIST_HEAD(&pipe->queue);
-	pipe->fence_context = dma_fence_context_alloc(1);
+	pipe->fence_context = fence_context_alloc(1);
 	spin_lock_init(&pipe->fence_lock);
 	init_waitqueue_head(&pipe->worker_idle_wait);
 	init_waitqueue_head(&pipe->worker_busy_wait);
@@ -335,10 +335,10 @@ unsigned long lima_timeout_to_jiffies(u64 timeout_ns)
 	return timeout_jiffies;
 }
 
-static struct dma_fence *lima_sched_pipe_get_fence(struct lima_sched_pipe *pipe, u32 fence)
+static struct fence *lima_sched_pipe_get_fence(struct lima_sched_pipe *pipe, u32 fence)
 {
 	struct lima_sched_task *task;
-	struct dma_fence *f = NULL;
+	struct fence *f = NULL;
 
 	spin_lock(&pipe->lock);
 	list_for_each_entry(task, &pipe->queue, list) {
@@ -347,7 +347,7 @@ static struct dma_fence *lima_sched_pipe_get_fence(struct lima_sched_pipe *pipe,
 
 		if (task->fence->seqno == fence) {
 			f = task->fence;
-			dma_fence_get(f);
+			fence_get(f);
 		}
 
 		break;
@@ -368,15 +368,15 @@ int lima_sched_pipe_wait_fence(struct lima_sched_pipe *pipe, u32 fence, u64 time
 		return fence <= pipe->fence_done_seqno ? 0 : -EBUSY;
 	else {
 		unsigned long timeout = lima_timeout_to_jiffies(timeout_ns);
-		struct dma_fence *f = lima_sched_pipe_get_fence(pipe, fence);
+		struct fence *f = lima_sched_pipe_get_fence(pipe, fence);
 
 		if (f) {
-			ret = dma_fence_wait_timeout(f, true, timeout);
+			ret = fence_wait_timeout(f, true, timeout);
 			if (ret == 0)
 				ret = -ETIMEDOUT;
 			else if (ret > 0)
 				ret = 0;
-			dma_fence_put(f);
+			fence_put(f);
 		}
 	}
 

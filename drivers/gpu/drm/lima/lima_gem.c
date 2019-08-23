@@ -145,8 +145,9 @@ int lima_gem_mmap(struct file *filp, struct vm_area_struct *vma)
 static int lima_gem_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
 	struct lima_bo *bo = to_lima_bo(vma->vm_private_data);
+	unsigned long address = (unsigned long)vmf->virtual_address;
 
-	dev_err(bo->gem.dev->dev, "unexpected vm fault %lx\n", vmf->address);
+	dev_err(bo->gem.dev->dev, "unexpected vm fault %lx\n", address);
 	return 0;
 }
 
@@ -296,7 +297,7 @@ static int lima_gem_sync_bo(struct lima_sched_task *task, u64 context,
 			    struct lima_bo *bo, bool write)
 {
 	int i, err;
-	struct dma_fence *f;
+	struct fence *f;
 
 	if (write) {
 		struct reservation_object_list *fobj =
@@ -383,7 +384,7 @@ int lima_gem_submit(struct drm_file *file, struct lima_sched_pipe *pipe,
 		else
 			reservation_object_add_shared_fence(&lbos[i]->resv, task->fence);
 	}
-	dma_fence_put(task->fence);
+	fence_put(task->fence);
 
 	*fence = task->fence->seqno;
 

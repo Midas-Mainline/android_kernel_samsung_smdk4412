@@ -16,7 +16,9 @@
 #define _INCLUDE_LINUX_PLATFORM_DATA_RAM_CONSOLE_H_
 
 struct ram_console_platform_data {
-	const char *bootinfo;
+        unsigned long   mem_size;
+        phys_addr_t     mem_address;
+        unsigned int    mem_type;
 };
 
 #endif /* _INCLUDE_LINUX_PLATFORM_DATA_RAM_CONSOLE_H_ */

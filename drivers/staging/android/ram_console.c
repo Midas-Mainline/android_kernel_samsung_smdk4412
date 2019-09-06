@@ -23,10 +23,29 @@
 #include <linux/uaccess.h>
 #include <linux/io.h>
 #include <linux/platform_data/ram_console.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_ERROR_CORRECTION
 #include <linux/rslib.h>
 #endif
+
+static unsigned long long mem_address;
+module_param_hw(mem_address, ullong, other, 0400);
+MODULE_PARM_DESC(mem_address,
+		"start of reserved RAM used to store oops/panic logs");
+
+static ulong mem_size;
+module_param(mem_size, ulong, 0400);
+MODULE_PARM_DESC(mem_size,
+		"size of reserved RAM used to store oops/panic logs");
+
+static unsigned int mem_type;
+module_param(mem_type, uint, 0600);
+MODULE_PARM_DESC(mem_type,
+		"set to 1 to try to use unbuffered memory (default 0)");
+
+static struct platform_device *dummy;
 
 struct ram_console_buffer {
 	uint32_t    sig;
@@ -157,14 +176,11 @@ void ram_console_enable_console(int enabled)
 }
 
 static void __init
-ram_console_save_old(struct ram_console_buffer *buffer, const char *bootinfo,
-	char *dest)
+ram_console_save_old(struct ram_console_buffer *buffer, char *dest)
 {
 	size_t old_log_size = buffer->size;
-	size_t bootinfo_size = 0;
 	size_t total_size = old_log_size;
 	char *ptr;
-	const char *bootinfo_label = "Boot info:\n";
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_ERROR_CORRECTION
 	uint8_t *block;
@@ -208,10 +224,6 @@ ram_console_save_old(struct ram_console_buffer *buffer, const char *bootinfo,
 	total_size += strbuf_len;
 #endif
 
-	if (bootinfo)
-		bootinfo_size = strlen(bootinfo) + strlen(bootinfo_label);
-	total_size += bootinfo_size;
-
 	if (dest == NULL) {
 		dest = kmalloc(total_size, GFP_KERNEL);
 		if (dest == NULL) {
@@ -232,16 +244,10 @@ ram_console_save_old(struct ram_console_buffer *buffer, const char *bootinfo,
 	memcpy(ptr, strbuf, strbuf_len);
 	ptr += strbuf_len;
 #endif
-	if (bootinfo) {
-		memcpy(ptr, bootinfo_label, strlen(bootinfo_label));
-		ptr += strlen(bootinfo_label);
-		memcpy(ptr, bootinfo, bootinfo_size);
-		ptr += bootinfo_size;
-	}
 }
 
 static int __init ram_console_init(struct ram_console_buffer *buffer,
-				   size_t buffer_size, const char *bootinfo,
+				   size_t buffer_size,
 				   char *old_buf)
 {
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_ERROR_CORRECTION
@@ -309,7 +315,7 @@ static int __init ram_console_init(struct ram_console_buffer *buffer,
 //			printk(KERN_INFO "ram_console: found existing buffer, "
 //			       "size %d, start %d\n",
 ;
-			ram_console_save_old(buffer, bootinfo, old_buf);
+			ram_console_save_old(buffer, old_buf);
 		}
 	} else {
 //		printk(KERN_INFO "ram_console: no valid data in buffer "
@@ -341,47 +347,100 @@ static int __init ram_console_early_init(void)
 #define LDI_MTP_LENGTH 21
 char mtp_data_from_boot[21];
 #endif
+
+static struct resource *g_res;
+
+static int ramoops_parse_dt(struct platform_device *pdev,
+			    struct ram_console_platform_data *pdata)
+{
+	struct device_node *of_node = pdev->dev.of_node;
+	struct device_node *parent_node;
+	u32 value;
+	int ret;
+
+	dev_dbg(&pdev->dev, "using Device Tree\n");
+
+	g_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!g_res) {
+		dev_err(&pdev->dev,
+			"failed to locate DT /reserved-memory resource\n");
+		return -EINVAL;
+	}
+
+	pdata->mem_size = resource_size(g_res);
+	pdata->mem_address = g_res->start;
+	pdata->mem_type = of_property_read_bool(of_node, "unbuffered");
+
+	return 0;
+}
+
 static int ram_console_driver_probe(struct platform_device *pdev)
 {
-	struct resource *res = pdev->resource;
+	struct device *dev = &pdev->dev;
 	size_t start;
 	size_t buffer_size;
 	void *buffer;
-	const char *bootinfo = NULL;
+	struct ram_console_platform_data pdata_local;
 	struct ram_console_platform_data *pdata = pdev->dev.platform_data;
 	#if defined(CONFIG_MACH_JANICE)
 	char *start_addr;
 	#endif
+	int err;
 
-	if (res == NULL || pdev->num_resources != 1 ||
-	    !(res->flags & IORESOURCE_MEM)) {
-//		printk(KERN_ERR "ram_console: invalid resource, %p %d flags "
-;
+	g_res = pdev->resource;
+
+	if (dev_of_node(dev) && !pdata) {
+		pdata = &pdata_local;
+		memset(pdata, 0, sizeof(*pdata));
+
+		err = ramoops_parse_dt(pdev, pdata);
+		if (err < 0) {
+			pr_err("%s: ramoops_parse_dt returned %d\n", __func__, err);
+			return err;
+		}
+	}
+
+	/* Make sure we didn't get bogus platform data pointer. */
+	if (!pdata) {
+		pr_err("NULL platform data\n");
 		return -ENXIO;
 	}
-	buffer_size = (res->end - res->start + 1) - PAGE_SIZE * 10;
-	start = res->start;
-	printk(KERN_INFO "ram_console: got buffer at %zx, size %zx\n", start, buffer_size);
-	buffer = ioremap(res->start, buffer_size);
-	if (buffer == NULL) {
-;
+
+	if (!pdata->mem_size) {
+		pr_err("The memory size must be non-zero\n");
 		return -ENOMEM;
 	}
 
-	if (pdata)
-		bootinfo = pdata->bootinfo;
+	if (g_res == NULL ||
+	    !(g_res->flags & IORESOURCE_MEM)) {
+		return -ENXIO;
+	}
+	buffer_size = (g_res->end - g_res->start + 1) - PAGE_SIZE * 10;
+	start = g_res->start;
+	printk(KERN_INFO "ram_console: got buffer at %zx, size %zx\n", start, buffer_size);
+	buffer = ioremap(g_res->start, buffer_size);
+	if (buffer == NULL) {
+		return -ENOMEM;
+	}
+
 	#if defined(CONFIG_MACH_JANICE)
 	start_addr = buffer + buffer_size  -  LDI_MTP_LENGTH;
 	memcpy(mtp_data_from_boot , start_addr , LDI_MTP_LENGTH);
 	#endif
 
-	return ram_console_init(buffer, buffer_size, bootinfo, NULL/* allocate */);
+	return ram_console_init(buffer, buffer_size, NULL/* allocate */);
 }
+
+static const struct of_device_id dt_match[] = {
+	{ .compatible = "ram_console" },
+	{}
+};
 
 static struct platform_driver ram_console_driver = {
 	.probe = ram_console_driver_probe,
 	.driver		= {
 		.name	= "ram_console",
+		.of_match_table	= dt_match,
 	},
 };
 
@@ -415,9 +474,53 @@ static const struct file_operations ram_console_file_ops = {
 	.read = ram_console_read_old,
 };
 
+static inline void ramoops_unregister_dummy(void)
+{
+	platform_device_unregister(dummy);
+	dummy = NULL;
+}
+
+static void __init ramoops_register_dummy(void)
+{
+	struct ram_console_platform_data pdata;
+
+	/*
+	 * Prepare a dummy platform data structure to carry the module
+	 * parameters. If mem_size isn't set, then there are no module
+	 * parameters, and we can skip this.
+	 */
+	if (!mem_size)
+		return;
+
+	pr_info("using module parameters\n");
+
+	memset(&pdata, 0, sizeof(pdata));
+	pdata.mem_size = mem_size;
+	pdata.mem_address = mem_address;
+	pdata.mem_type = mem_type;
+
+	dummy = platform_device_register_data(NULL, "ramoops", -1,
+			&pdata, sizeof(pdata));
+	if (IS_ERR(dummy)) {
+		pr_info("could not create platform device: %ld\n",
+			PTR_ERR(dummy));
+		dummy = NULL;
+		ramoops_unregister_dummy();
+	}
+}
+
 static int __init ram_console_late_init(void)
 {
 	struct proc_dir_entry *entry;
+
+	int ret;
+
+	ramoops_register_dummy();
+	ret = platform_driver_register(&ram_console_driver);
+	if (ret != 0) {
+		ramoops_unregister_dummy();
+		goto fail;
+	}
 
 	if (ram_console_old_log == NULL)
 		return 0;
@@ -442,6 +545,8 @@ static int __init ram_console_late_init(void)
 
 	proc_set_size(entry, ram_console_old_log_size);
 	return 0;
+fail:
+	return ret;
 }
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
@@ -451,3 +556,9 @@ postcore_initcall(ram_console_module_init);
 #endif
 late_initcall(ram_console_late_init);
 
+static void __exit ramoops_exit(void)
+{
+	platform_driver_unregister(&ram_console_driver);
+	ramoops_unregister_dummy();
+}
+module_exit(ramoops_exit);

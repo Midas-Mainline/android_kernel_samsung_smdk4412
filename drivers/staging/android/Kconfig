@@ -13,7 +13,7 @@ config ASHMEM
 
 config ANDROID_RAM_CONSOLE
 	bool "Android RAM buffer console"
-	depends on !S390 && !UML && HAVE_MEMBLOCK && PSTORE_RAM=y
+	depends on !S390 && !UML
 	default n
 
 config ANDROID_VSOC

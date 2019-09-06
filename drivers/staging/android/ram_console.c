@@ -15,16 +15,20 @@
 
 #include <linux/console.h>
 #include <linux/init.h>
+#include <linux/mm.h>
+#include <linux/gfp.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/proc_fs.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
+#include <linux/vmalloc.h>
 #include <linux/io.h>
 #include <linux/platform_data/ram_console.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
+#include <asm/page.h>
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE_ERROR_CORRECTION
 #include <linux/rslib.h>
@@ -359,6 +363,46 @@ static int ramoops_parse_dt(struct platform_device *pdev,
 	return 0;
 }
 
+static void *persistent_ram_vmap(phys_addr_t start, size_t size,
+		unsigned int memtype)
+{
+	struct page **pages;
+	phys_addr_t page_start;
+	unsigned int page_count;
+	pgprot_t prot;
+	unsigned int i;
+	void *vaddr;
+
+	page_start = start - offset_in_page(start);
+	page_count = DIV_ROUND_UP(size + offset_in_page(start), PAGE_SIZE);
+
+	if (memtype)
+		prot = pgprot_noncached(PAGE_KERNEL);
+	else
+		prot = pgprot_writecombine(PAGE_KERNEL);
+
+	pages = kmalloc_array(page_count, sizeof(struct page *), GFP_KERNEL);
+	if (!pages) {
+		pr_err("%s: Failed to allocate array for %u pages\n",
+		       __func__, page_count);
+		return NULL;
+	}
+
+	for (i = 0; i < page_count; i++) {
+		phys_addr_t addr = page_start + i * PAGE_SIZE;
+		pages[i] = pfn_to_page(addr >> PAGE_SHIFT);
+	}
+	vaddr = vmap(pages, page_count, VM_MAP, prot);
+	kfree(pages);
+
+	/*
+	 * Since vmap() uses page granularity, we must add the offset
+	 * into the page here, to get the byte granularity address
+	 * into the mapping to represent the actual "start" location.
+	 */
+	return vaddr + offset_in_page(start);
+}
+
 static int ram_console_driver_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -401,7 +445,7 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 	buffer_size = mem_size - PAGE_SIZE * 10;
 	start = g_res[0].start;
 	pr_err("%s: ram_console: got buffer at %zx, size %zx\n", __func__, start, buffer_size);
-	buffer = ioremap(g_res[0].start, buffer_size);
+	buffer = persistent_ram_vmap(g_res[0].start, buffer_size, 0);
 	if (buffer == NULL) {
 		pr_err("%s: ioremap failed\n", __func__);
 		return -ENOMEM;

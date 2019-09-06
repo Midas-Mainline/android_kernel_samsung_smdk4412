@@ -56,10 +56,6 @@ struct ram_console_buffer {
 
 #define RAM_CONSOLE_SIG (0x43474244) /* DBGC */
 
-#ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
-static char __initdata
-	ram_console_old_log_init_buffer[CONFIG_ANDROID_RAM_CONSOLE_EARLY_SIZE];
-#endif
 static char *ram_console_old_log;
 static size_t ram_console_old_log_size;
 
@@ -333,21 +329,6 @@ static int __init ram_console_init(struct ram_console_buffer *buffer,
 	return 0;
 }
 
-#ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
-static int __init ram_console_early_init(void)
-{
-	return ram_console_init((struct ram_console_buffer *)
-		CONFIG_ANDROID_RAM_CONSOLE_EARLY_ADDR,
-		CONFIG_ANDROID_RAM_CONSOLE_EARLY_SIZE,
-		NULL,
-		ram_console_old_log_init_buffer);
-}
-#else
-#if defined(CONFIG_MACH_JANICE)
-#define LDI_MTP_LENGTH 21
-char mtp_data_from_boot[21];
-#endif
-
 static struct resource *g_res;
 
 static int ramoops_parse_dt(struct platform_device *pdev,
@@ -382,9 +363,6 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 	void *buffer;
 	struct ram_console_platform_data pdata_local;
 	struct ram_console_platform_data *pdata = pdev->dev.platform_data;
-	#if defined(CONFIG_MACH_JANICE)
-	char *start_addr;
-	#endif
 	int err;
 
 	g_res = pdev->resource;
@@ -423,11 +401,6 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	#if defined(CONFIG_MACH_JANICE)
-	start_addr = buffer + buffer_size  -  LDI_MTP_LENGTH;
-	memcpy(mtp_data_from_boot , start_addr , LDI_MTP_LENGTH);
-	#endif
-
 	return ram_console_init(buffer, buffer_size, NULL/* allocate */);
 }
 
@@ -443,14 +416,6 @@ static struct platform_driver ram_console_driver = {
 		.of_match_table	= dt_match,
 	},
 };
-
-static int __init ram_console_module_init(void)
-{
-	int err;
-	err = platform_driver_register(&ram_console_driver);
-	return err;
-}
-#endif
 
 static ssize_t ram_console_read_old(struct file *file, char __user *buf,
 				    size_t len, loff_t *offset)
@@ -524,20 +489,8 @@ static int __init ram_console_late_init(void)
 
 	if (ram_console_old_log == NULL)
 		return 0;
-#ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
-	ram_console_old_log = kmalloc(ram_console_old_log_size, GFP_KERNEL);
-	if (ram_console_old_log == NULL) {
-//		printk(KERN_ERR
-;
-		ram_console_old_log_size = 0;
-		return 0;
-	}
-	memcpy(ram_console_old_log,
-	       ram_console_old_log_init_buffer, ram_console_old_log_size);
-#endif
 	entry = proc_create_data("last_kmsg", S_IFREG | S_IRUGO, NULL, &ram_console_file_ops, NULL);
 	if (!entry) {
-;
 		kfree(ram_console_old_log);
 		ram_console_old_log = NULL;
 		return 0;
@@ -549,12 +502,7 @@ fail:
 	return ret;
 }
 
-#ifdef CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT
-console_initcall(ram_console_early_init);
-#else
-postcore_initcall(ram_console_module_init);
-#endif
-late_initcall(ram_console_late_init);
+postcore_initcall(ram_console_late_init);
 
 static void __exit ramoops_exit(void)
 {

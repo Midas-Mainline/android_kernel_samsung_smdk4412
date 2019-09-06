@@ -34,7 +34,7 @@
 #include <linux/rslib.h>
 #endif
 
-static unsigned long long mem_address = 0x7f000000;
+static unsigned long long mem_address = 0x46000000;
 module_param_hw(mem_address, ullong, other, 0400);
 MODULE_PARM_DESC(mem_address,
 		"start of reserved RAM used to store oops/panic logs");
@@ -58,7 +58,7 @@ struct ram_console_buffer {
 	uint8_t     data[0];
 };
 
-#define RAM_CONSOLE_SIG (0x43474244) /* DBGC */
+#define RAM_CONSOLE_SIG (0x4d474f4c) /* LOGM */
 
 static char *ram_console_old_log;
 static size_t ram_console_old_log_size;

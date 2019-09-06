@@ -339,12 +339,11 @@ static int ramoops_parse_dt(struct platform_device *pdev,
 	u32 value;
 	int ret;
 
-	dev_dbg(&pdev->dev, "using Device Tree\n");
+	pr_err("%s: using Device Tree\n", __func__);
 
 	g_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!g_res) {
-		dev_err(&pdev->dev,
-			"failed to locate DT /reserved-memory resource\n");
+		pr_err("%s: failed to locate DT /reserved-memory resource\n", __func__);
 		return -EINVAL;
 	}
 
@@ -380,24 +379,26 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 
 	/* Make sure we didn't get bogus platform data pointer. */
 	if (!pdata) {
-		pr_err("NULL platform data\n");
+		pr_err("%s: NULL platform data\n", __func__);
 		return -ENXIO;
 	}
 
 	if (!pdata->mem_size) {
-		pr_err("The memory size must be non-zero\n");
+		pr_err("%s: The memory size must be non-zero\n", __func__);
 		return -ENOMEM;
 	}
 
 	if (g_res == NULL ||
 	    !(g_res->flags & IORESOURCE_MEM)) {
+		pr_err("%s: g_res == NULL or !(g_res->flags & IORESOURCE_MEM)\n", __func__);
 		return -ENXIO;
 	}
 	buffer_size = (g_res->end - g_res->start + 1) - PAGE_SIZE * 10;
 	start = g_res->start;
-	printk(KERN_INFO "ram_console: got buffer at %zx, size %zx\n", start, buffer_size);
+	pr_err("%s: ram_console: got buffer at %zx, size %zx\n", __func__, start, buffer_size);
 	buffer = ioremap(g_res->start, buffer_size);
 	if (buffer == NULL) {
+		pr_err("%s: ioremap failed\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -441,6 +442,8 @@ static const struct file_operations ram_console_file_ops = {
 
 static inline void ramoops_unregister_dummy(void)
 {
+	pr_err("%s: init\n", __func__);
+
 	platform_device_unregister(dummy);
 	dummy = NULL;
 }
@@ -454,10 +457,13 @@ static void __init ramoops_register_dummy(void)
 	 * parameters. If mem_size isn't set, then there are no module
 	 * parameters, and we can skip this.
 	 */
-	if (!mem_size)
-		return;
+	if (!mem_size) {
+		pr_err("%s: mem_size is not set\n", __func__);
 
-	pr_info("using module parameters\n");
+		return;
+	}
+
+	pr_err("%s: using module parameters\n", __func__);
 
 	memset(&pdata, 0, sizeof(pdata));
 	pdata.mem_size = mem_size;
@@ -467,8 +473,8 @@ static void __init ramoops_register_dummy(void)
 	dummy = platform_device_register_data(NULL, "ramoops", -1,
 			&pdata, sizeof(pdata));
 	if (IS_ERR(dummy)) {
-		pr_info("could not create platform device: %ld\n",
-			PTR_ERR(dummy));
+		pr_err("%s: could not create platform device: %ld\n",
+			__func__, PTR_ERR(dummy));
 		dummy = NULL;
 		ramoops_unregister_dummy();
 	}
@@ -479,18 +485,25 @@ static int __init ram_console_late_init(void)
 	struct proc_dir_entry *entry;
 
 	int ret;
+	pr_err("%s: init\n", __func__);
 
 	ramoops_register_dummy();
 	ret = platform_driver_register(&ram_console_driver);
 	if (ret != 0) {
 		ramoops_unregister_dummy();
+		pr_err("%s: platform_driver_register failed, ret=%d\n", __func__, ret);
 		goto fail;
 	}
 
-	if (ram_console_old_log == NULL)
+	if (ram_console_old_log == NULL) {
+		pr_err("%s: old RAM console log not found\n", __func__);
+
 		return 0;
+	}
 	entry = proc_create_data("last_kmsg", S_IFREG | S_IRUGO, NULL, &ram_console_file_ops, NULL);
 	if (!entry) {
+		pr_err("%s: proc_create_data failed\n", __func__);
+
 		kfree(ram_console_old_log);
 		ram_console_old_log = NULL;
 		return 0;

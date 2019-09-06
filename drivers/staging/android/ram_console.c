@@ -30,12 +30,12 @@
 #include <linux/rslib.h>
 #endif
 
-static unsigned long long mem_address;
+static unsigned long long mem_address = 0x7f000000;
 module_param_hw(mem_address, ullong, other, 0400);
 MODULE_PARM_DESC(mem_address,
 		"start of reserved RAM used to store oops/panic logs");
 
-static ulong mem_size;
+static ulong mem_size = 0x100000;
 module_param(mem_size, ulong, 0400);
 MODULE_PARM_DESC(mem_size,
 		"size of reserved RAM used to store oops/panic logs");
@@ -329,7 +329,12 @@ static int __init ram_console_init(struct ram_console_buffer *buffer,
 	return 0;
 }
 
-static struct resource *g_res;
+static struct resource g_res[] = {
+	{
+		.flags = IORESOURCE_MEM,
+	}
+};
+
 
 static int ramoops_parse_dt(struct platform_device *pdev,
 			    struct ram_console_platform_data *pdata)
@@ -341,15 +346,15 @@ static int ramoops_parse_dt(struct platform_device *pdev,
 
 	pr_err("%s: using Device Tree\n", __func__);
 
-	g_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	/*g_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!g_res) {
 		pr_err("%s: failed to locate DT /reserved-memory resource\n", __func__);
 		return -EINVAL;
-	}
+	}*/
 
-	pdata->mem_size = resource_size(g_res);
-	pdata->mem_address = g_res->start;
-	pdata->mem_type = of_property_read_bool(of_node, "unbuffered");
+	//pdata->mem_size = resource_size(g_res);
+	//pdata->mem_address = g_res->start;
+	//pdata->mem_type = of_property_read_bool(of_node, "unbuffered");
 
 	return 0;
 }
@@ -364,7 +369,9 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 	struct ram_console_platform_data *pdata = pdev->dev.platform_data;
 	int err;
 
-	g_res = pdev->resource;
+	pr_err("%s: init\n", __func__);
+
+	pr_err("%s: dev_of_node(dev)=%d, (!pdata)=%d\n", __func__, !!dev_of_node(dev), (int)(!pdata));
 
 	if (dev_of_node(dev) && !pdata) {
 		pdata = &pdata_local;
@@ -388,15 +395,13 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	if (g_res == NULL ||
-	    !(g_res->flags & IORESOURCE_MEM)) {
-		pr_err("%s: g_res == NULL or !(g_res->flags & IORESOURCE_MEM)\n", __func__);
-		return -ENXIO;
-	}
-	buffer_size = (g_res->end - g_res->start + 1) - PAGE_SIZE * 10;
-	start = g_res->start;
+	g_res[0].start = mem_address;
+	g_res[0].end = mem_address + mem_size - 1;
+
+	buffer_size = mem_size - PAGE_SIZE * 10;
+	start = g_res[0].start;
 	pr_err("%s: ram_console: got buffer at %zx, size %zx\n", __func__, start, buffer_size);
-	buffer = ioremap(g_res->start, buffer_size);
+	buffer = ioremap(g_res[0].start, buffer_size);
 	if (buffer == NULL) {
 		pr_err("%s: ioremap failed\n", __func__);
 		return -ENOMEM;
@@ -405,15 +410,21 @@ static int ram_console_driver_probe(struct platform_device *pdev)
 	return ram_console_init(buffer, buffer_size, NULL/* allocate */);
 }
 
+static int ram_console_driver_remove(struct platform_device *pdev)
+{
+	return 0;
+}
+
 static const struct of_device_id dt_match[] = {
-	{ .compatible = "ram_console" },
+	{ .compatible = "ramconsole" },
 	{}
 };
 
 static struct platform_driver ram_console_driver = {
 	.probe = ram_console_driver_probe,
+	.remove	= ram_console_driver_remove,
 	.driver		= {
-		.name	= "ram_console",
+		.name	= "ramconsole",
 		.of_match_table	= dt_match,
 	},
 };
@@ -470,7 +481,7 @@ static void __init ramoops_register_dummy(void)
 	pdata.mem_address = mem_address;
 	pdata.mem_type = mem_type;
 
-	dummy = platform_device_register_data(NULL, "ramoops", -1,
+	dummy = platform_device_register_data(NULL, "ramconsole", -1,
 			&pdata, sizeof(pdata));
 	if (IS_ERR(dummy)) {
 		pr_err("%s: could not create platform device: %ld\n",

@@ -401,30 +401,39 @@ static const struct snd_soc_component_driver midas_component = {
 	.name	= "midas-audio",
 };
 
+SND_SOC_DAILINK_DEFS(wm8994_aif1,
+	DAILINK_COMP_ARRAY(COMP_CPU(SAMSUNG_I2S_DAI)),
+	DAILINK_COMP_ARRAY(COMP_CODEC("midas-audio.0", "wm8994-aif1")));
+
+SND_SOC_DAILINK_DEFS(wm8994_aif2,
+	DAILINK_COMP_ARRAY(COMP_CPU(SAMSUNG_I2S_DAI)),
+	DAILINK_COMP_ARRAY(COMP_CODEC("midas-audio.0", "wm8994-aif2")));
+
+SND_SOC_DAILINK_DEFS(wm8994_aif3,
+	DAILINK_COMP_ARRAY(COMP_CPU(SAMSUNG_I2S_DAI)),
+	DAILINK_COMP_ARRAY(COMP_CODEC("midas-audio.0", "wm8994-aif3")));
+
 static struct snd_soc_dai_link midas_dai[] = {
 	{
 		.name = "WM8994 AIF1",
 		.stream_name = "HiFi Primary",
-		.cpu_dai_name = SAMSUNG_I2S_DAI,
-		.codec_dai_name = "wm8994-aif1",
 		.ops = &midas_aif1_ops,
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
 			SND_SOC_DAIFMT_CBM_CFM,
+		SND_SOC_DAILINK_REG(wm8994_aif1),
 	},
 	{
 		.name = "WM1811 Voice",
 		.stream_name = "Voice call",
-		.cpu_dai_name = SAMSUNG_I2S_DAI,
-		.codec_dai_name = "wm8994-aif2",
 		//.ops = &midas_wm1811_aif2_ops,
 		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(wm8994_aif2),
 	},
 	{
 		.name = "WM1811 BT",
 		.stream_name = "Bluetooth",
-		.cpu_dai_name = SAMSUNG_I2S_DAI,
-		.codec_dai_name = "wm8994-aif3",
 		.ignore_suspend = 1,
+		SND_SOC_DAILINK_REG(wm8994_aif3),
 	},
 };
 
@@ -509,11 +518,11 @@ static int midas_probe(struct platform_device *pdev)
 	}
 
 	for (i = 0; i < card->num_links; i++) {
-		card->dai_link[i].cpu_name = NULL;
-		card->dai_link[i].platform_name = NULL;
-		card->dai_link[i].codec_of_node = codec_dai_node;
-		card->dai_link[i].cpu_of_node = cpu_dai_node;
-		card->dai_link[i].platform_of_node = cpu_dai_node;
+		card->dai_link[i].cpus->name = NULL;
+		card->dai_link[i].platforms->name = NULL;
+		card->dai_link[i].codecs->of_node = codec_dai_node;
+		card->dai_link[i].cpus->of_node = cpu_dai_node;
+		card->dai_link[i].platforms->of_node = cpu_dai_node;
 	}
 
 	priv->codec_mclk1 = of_clk_get_by_name(codec_dai_node, "MCLK1");

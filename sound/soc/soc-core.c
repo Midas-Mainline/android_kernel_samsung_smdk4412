@@ -792,9 +792,6 @@ static int snd_soc_is_matching_component(
 {
 	struct device_node *component_of_node;
 
-	if (!dlc)
-		return 0;
-
 	component_of_node = soc_component_to_node(component);
 
 	if (dlc->of_node && component_of_node != dlc->of_node)
@@ -1058,11 +1055,19 @@ static void soc_remove_dai_links(struct snd_soc_card *card)
 	}
 }
 
+static struct snd_soc_dai_link_component dummy_link = COMP_DUMMY();
+
 static int soc_init_dai_link(struct snd_soc_card *card,
 			     struct snd_soc_dai_link *link)
 {
 	int i;
 	struct snd_soc_dai_link_component *codec;
+
+	/* default Platform */
+	if (!link->platforms || !link->num_platforms) {
+		link->platforms = &dummy_link;
+		link->num_platforms = 1;
+	}
 
 	for_each_link_codecs(link, i, codec) {
 		/*
@@ -1083,39 +1088,32 @@ static int soc_init_dai_link(struct snd_soc_card *card,
 		}
 	}
 
-	/*
-	 * Platform may be specified by either name or OF node,
-	 * or no Platform.
-	 *
-	 * FIXME
-	 *
-	 * We need multi-platform support
-	 */
-	if (link->num_platforms > 0) {
-
-		if (link->num_platforms > 1) {
-			dev_err(card->dev,
-				"ASoC: multi platform is not yet supported %s\n",
-				link->name);
-			return -EINVAL;
-		}
-
-		if (link->platforms->name && link->platforms->of_node) {
-			dev_err(card->dev,
-				"ASoC: Both platform name/of_node are set for %s\n",
-				link->name);
-			return -EINVAL;
-		}
-
-		/*
-		 * Defer card registartion if platform dai component is not
-		 * added to component list.
-		 */
-		if ((link->platforms->of_node || link->platforms->name) &&
-		    !soc_find_component(link->platforms->of_node,
-					link->platforms->name))
-			return -EPROBE_DEFER;
+	/* FIXME */
+	if (link->num_platforms > 1) {
+		dev_err(card->dev,
+			"ASoC: multi platform is not yet supported %s\n",
+			link->name);
+		return -EINVAL;
 	}
+
+	/*
+	 * Platform may be specified by either name or OF node, but
+	 * can be left unspecified, and a dummy platform will be used.
+	 */
+	if (link->platforms->name && link->platforms->of_node) {
+		dev_err(card->dev,
+			"ASoC: Both platform name/of_node are set for %s\n",
+			link->name);
+		return -EINVAL;
+	}
+
+	/*
+	 * Defer card registartion if platform dai component is not added to
+	 * component list.
+	 */
+	if ((link->platforms->of_node || link->platforms->name) &&
+	    !soc_find_component(link->platforms->of_node, link->platforms->name))
+		return -EPROBE_DEFER;
 
 	/* FIXME */
 	if (link->num_cpus > 1) {

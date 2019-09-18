@@ -784,15 +784,19 @@ static int snd_soc_is_matching_component(
 }
 
 static struct snd_soc_component *soc_find_component(
-	const struct snd_soc_dai_link_component *dlc)
+	struct device_node *of_node, const char *name)
 {
 	struct snd_soc_component *component;
+	struct snd_soc_dai_link_component dlc;
 
 	lockdep_assert_held(&client_mutex);
 
-	for_each_component(component)
-		if (snd_soc_is_matching_component(dlc, component))
+	for_each_component(component) {
+		dlc.name = name;
+		dlc.of_node = of_node;
+		if (snd_soc_is_matching_component(&dlc, component))
 			return component;
+	}
 
 	return NULL;
 }
@@ -1104,7 +1108,8 @@ static int soc_init_dai_link(struct snd_soc_card *card,
 		 * added to component list.
 		 */
 		if ((link->platforms->of_node || link->platforms->name) &&
-		    !soc_find_component(link->platforms))
+		    !soc_find_component(link->platforms->of_node,
+					link->platforms->name))
 			return -EPROBE_DEFER;
 	}
 
@@ -1133,7 +1138,7 @@ static int soc_init_dai_link(struct snd_soc_card *card,
 	 * component list.
 	 */
 	if ((link->cpus->of_node || link->cpus->name) &&
-	    !soc_find_component(link->cpus))
+	    !soc_find_component(link->cpus->of_node, link->cpus->name))
 		return -EPROBE_DEFER;
 
 	/*
@@ -1577,23 +1582,23 @@ static int soc_bind_aux_dev(struct snd_soc_card *card, int num)
 {
 	struct snd_soc_aux_dev *aux_dev = &card->aux_dev[num];
 	struct snd_soc_component *component;
-	struct snd_soc_dai_link_component dlc;
+	const char *name;
+	struct device_node *codec_of_node;
 
 	if (aux_dev->codec_of_node || aux_dev->codec_name) {
 		/* codecs, usually analog devices */
-		dlc.name = aux_dev->codec_name;
-		dlc.of_node = aux_dev->codec_of_node;
-		component = soc_find_component(&dlc);
+		name = aux_dev->codec_name;
+		codec_of_node = aux_dev->codec_of_node;
+		component = soc_find_component(codec_of_node, name);
 		if (!component) {
-			if (dlc.of_node)
-				dlc.name = of_node_full_name(dlc.of_node);
+			if (codec_of_node)
+				name = of_node_full_name(codec_of_node);
 			goto err_defer;
 		}
 	} else if (aux_dev->name) {
 		/* generic components */
-		dlc.name = aux_dev->name;
-		dlc.of_node = NULL;
-		component = soc_find_component(&dlc);
+		name = aux_dev->name;
+		component = soc_find_component(NULL, name);
 		if (!component)
 			goto err_defer;
 	} else {
@@ -1607,7 +1612,7 @@ static int soc_bind_aux_dev(struct snd_soc_card *card, int num)
 	return 0;
 
 err_defer:
-	dev_err(card->dev, "ASoC: %s not registered\n", dlc.name);
+	dev_err(card->dev, "ASoC: %s not registered\n", name);
 	return -EPROBE_DEFER;
 }
 
@@ -3660,11 +3665,11 @@ EXPORT_SYMBOL_GPL(snd_soc_of_parse_daifmt);
 int snd_soc_get_dai_id(struct device_node *ep)
 {
 	struct snd_soc_component *component;
-	struct snd_soc_dai_link_component dlc;
+	struct device_node *node;
 	int ret;
 
-	dlc.of_node	= of_graph_get_port_parent(ep);
-	dlc.name	= NULL;
+	node = of_graph_get_port_parent(ep);
+
 	/*
 	 * For example HDMI case, HDMI has video/sound port,
 	 * but ALSA SoC needs sound port number only.
@@ -3673,13 +3678,13 @@ int snd_soc_get_dai_id(struct device_node *ep)
 	 */
 	ret = -ENOTSUPP;
 	mutex_lock(&client_mutex);
-	component = soc_find_component(&dlc);
+	component = soc_find_component(node, NULL);
 	if (component &&
 	    component->driver->of_xlate_dai_id)
 		ret = component->driver->of_xlate_dai_id(component, ep);
 	mutex_unlock(&client_mutex);
 
-	of_node_put(dlc.of_node);
+	of_node_put(node);
 
 	return ret;
 }

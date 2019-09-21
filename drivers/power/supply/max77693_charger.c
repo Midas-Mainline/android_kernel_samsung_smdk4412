@@ -610,7 +610,7 @@ static int max77693_enable_charger(struct max77693_charger *chg, bool enable)
 	int ret;
 
 	if (enable) {
-		ret = regulator_set_current_limit(
+		regulator_set_current_limit(
 			chg->regu,
 			CHG_CNFG_09_CHGIN_ILIM_500_MIN,
 			CHG_CNFG_09_CHGIN_ILIM_500_MAX);

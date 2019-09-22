@@ -279,7 +279,7 @@ static const struct snd_soc_dapm_widget midas_dapm_widgets[] = {
 	SND_SOC_DAPM_SPK("RCV", NULL),
 
 	/* FIXME toggle MAX77693 on i9300/i9305 */
-	SND_SOC_DAPM_LINE("LINE", midas_line_set),
+	//SND_SOC_DAPM_LINE("LINE", midas_line_set),
 	SND_SOC_DAPM_LINE("HDMI", NULL),
 	SND_SOC_DAPM_LINE("FM In", midas_fm_set),
 
@@ -477,11 +477,11 @@ static int midas_probe(struct platform_device *pdev)
 		return PTR_ERR(priv->gpio_fm_sel);
 	}
 
-	priv->gpio_lineout_sel = gpiod_get_optional(dev, "lineout-sel", GPIOD_OUT_HIGH);
+	/*priv->gpio_lineout_sel = gpiod_get_optional(dev, "lineout-sel", GPIOD_OUT_HIGH);
 	if (IS_ERR(priv->gpio_lineout_sel)) {
 		dev_err(dev, "Failed to get line out selection GPIO\n");
 		return PTR_ERR(priv->gpio_lineout_sel);
-	}
+	}*/
 
 	ret = snd_soc_of_parse_card_name(card, "model");
 	if (ret < 0) {

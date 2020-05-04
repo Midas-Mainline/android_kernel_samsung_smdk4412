@@ -13,6 +13,7 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/pm.h>
+#include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -303,6 +304,7 @@ static const struct snd_soc_dapm_widget midas_dapm_widgets[] = {
 
 extern struct wm8994_priv *g_wm8994;
 extern void wm8958_micd_set_rate(struct snd_soc_component *component);
+static void toggle_hp_switch(bool enable);
 
 static void midas_mic_id(void *data, u16 status)
 {
@@ -314,6 +316,8 @@ static void midas_mic_id(void *data, u16 status)
 
 	pr_err("%s: detected jack: status=%d\n", __func__, status);
 	__pm_wakeup_event(&wm1811->jackdet_wake_lock, 5 * 1000);
+
+	//toggle_hp_switch(true);
 
 	/* Either nothing present or just starting detection */
 	if (!(status & WM8958_MICD_STS)) {
@@ -412,6 +416,10 @@ static int midas_set_bias_level(struct snd_soc_card *card,
 	return 0;
 }
 
+static void hp_switch_toggle_work_fn(struct work_struct *work);
+
+static DECLARE_DELAYED_WORK(hp_switch_toggle_delayedwork, hp_switch_toggle_work_fn);
+
 static int midas_late_probe(struct snd_soc_card *card) {
 	struct snd_soc_pcm_runtime *rtd = snd_soc_get_pcm_runtime(card,
 			card->dai_link[0].name);
@@ -470,6 +478,10 @@ static int midas_late_probe(struct snd_soc_card *card) {
 
 	wakeup_source_init(&priv->jackdet_wake_lock,
 					"midas_jackdet");
+
+	pr_err("midas: %s: started hp_switch_toggle_delayedwork", __func__);
+
+	schedule_delayed_work(&hp_switch_toggle_delayedwork, msecs_to_jiffies(0));
 
 	wm8958_mic_detect(component, &midas_headset, NULL, NULL, midas_mic_id, priv);
 	return 0;
@@ -561,6 +573,44 @@ static struct snd_soc_card midas_card = {
 	.set_bias_level = midas_set_bias_level,
 	.late_probe = midas_late_probe,
 };
+
+static void toggle_hp_switch(bool enable)
+{
+        const char *hp_switch_pin = (const char *)midas_controls[0].private_value;
+        const char *spk_switch_pin = (const char *)midas_controls[1].private_value;
+
+	if (enable) {
+		snd_soc_dapm_enable_pin(&midas_card.dapm, hp_switch_pin);
+		snd_soc_dapm_disable_pin(&midas_card.dapm, spk_switch_pin);
+	} else {
+		snd_soc_dapm_disable_pin(&midas_card.dapm, hp_switch_pin);
+		snd_soc_dapm_enable_pin(&midas_card.dapm, spk_switch_pin);
+	}
+
+	snd_soc_dapm_sync(&midas_card.dapm);
+}
+
+static bool hp_switch_status;
+
+static void hp_switch_toggle_work_fn(struct work_struct *work)
+{
+	struct snd_soc_component *component = g_wm8994->hubs.component;
+	int reg, count;
+	bool status;
+
+	reg = snd_soc_component_read32(component, WM8958_MIC_DETECT_3);
+
+	//pr_err("%s: status=%d", __func__, reg);
+
+	status = reg & WM8958_MICD_STS;
+
+	if (status != hp_switch_status)
+		toggle_hp_switch(status);
+
+	hp_switch_status = status;
+
+	schedule_delayed_work(&hp_switch_toggle_delayedwork, msecs_to_jiffies(200));
+}
 
 static void card_register_fn(struct work_struct *work);
 

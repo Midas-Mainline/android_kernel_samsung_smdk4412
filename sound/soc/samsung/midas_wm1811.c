@@ -38,7 +38,6 @@ static struct snd_soc_card *g_card;
 
 struct midas_machine_priv {
 	struct snd_soc_codec_conf *codec;
-	struct wakeup_source jackdet_wake_lock;
 	struct clk *codec_mclk1;
 	struct clk *codec_mclk2;
 	struct regulator *reg_mic_bias;
@@ -315,7 +314,6 @@ static void midas_mic_id(void *data, u16 status)
 	struct snd_soc_component *component = rtd->codec_dai->component;
 
 	pr_err("%s: detected jack: status=%d\n", __func__, status);
-	__pm_wakeup_event(&wm1811->jackdet_wake_lock, 5 * 1000);
 
 	//toggle_hp_switch(true);
 
@@ -475,9 +473,6 @@ static int midas_late_probe(struct snd_soc_card *card) {
 
 	/* To wakeup for earjack event in suspend mode */
 	enable_irq_wake(control->irq);
-
-	wakeup_source_init(&priv->jackdet_wake_lock,
-					"midas_jackdet");
 
 	pr_err("midas: %s: started hp_switch_toggle_delayedwork", __func__);
 

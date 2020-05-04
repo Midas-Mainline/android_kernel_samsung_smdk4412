@@ -586,6 +586,7 @@ static void toggle_hp_switch(bool enable)
 }
 
 static bool hp_switch_status;
+int wm8958_mic_detect_reg;
 
 static void hp_switch_toggle_work_fn(struct work_struct *work)
 {
@@ -594,6 +595,7 @@ static void hp_switch_toggle_work_fn(struct work_struct *work)
 	bool status;
 
 	reg = snd_soc_component_read32(component, WM8958_MIC_DETECT_3);
+	wm8958_mic_detect_reg = reg;
 
 	//pr_err("%s: status=%d", __func__, reg);
 

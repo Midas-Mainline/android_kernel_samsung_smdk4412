@@ -3871,11 +3871,13 @@ static void wm8958_mic_work(struct work_struct *work)
 	pm_runtime_put(component->dev);
 }
 
+extern int wm8958_mic_detect_reg;
+
 static irqreturn_t wm8958_mic_irq(int irq, void *data)
 {
 	struct wm8994_priv *wm8994 = data;
 	struct snd_soc_component *component = wm8994->hubs.component;
-	int reg, count, ret, id_delay;
+	int count, ret, id_delay;
 
 	/*
 	 * Jack detection may have detected a removal simulataneously
@@ -3887,36 +3889,6 @@ static irqreturn_t wm8958_mic_irq(int irq, void *data)
 
 	cancel_delayed_work_sync(&wm8994->mic_complete_work);
 	cancel_delayed_work_sync(&wm8994->open_circuit_work);
-
-	pm_runtime_get_sync(component->dev);
-
-	/* We may occasionally read a detection without an impedence
-	 * range being provided - if that happens loop again.
-	 */
-	count = 10;
-	do {
-		reg = snd_soc_component_read32(component, WM8958_MIC_DETECT_3);
-		if (reg < 0) {
-			dev_err(component->dev,
-				"Failed to read mic detect status: %d\n",
-				reg);
-			pm_runtime_put(component->dev);
-			return IRQ_NONE;
-		}
-
-		if (!(reg & WM8958_MICD_VALID)) {
-			dev_dbg(component->dev, "Mic detect data not valid\n");
-			goto out;
-		}
-
-		if (!(reg & WM8958_MICD_STS) || (reg & WM8958_MICD_LVL_MASK))
-			break;
-
-		msleep(1);
-	} while (count--);
-
-	if (count == 0)
-		dev_warn(component->dev, "No impedance range reported for jack\n");
 
 #ifndef CONFIG_SND_SOC_WM8994_MODULE
 	trace_snd_soc_jack_irq(dev_name(component->dev));
@@ -3932,7 +3904,7 @@ static irqreturn_t wm8958_mic_irq(int irq, void *data)
 			dev_dbg(component->dev, "Ignoring removed jack\n");
 			goto out;
 		}
-	} else if (!(reg & WM8958_MICD_STS)) {
+	} else if (!(wm8958_mic_detect_reg & WM8958_MICD_STS)) {
 		snd_soc_jack_report(wm8994->micdet[0].jack, 0,
 				    SND_JACK_MECHANICAL | SND_JACK_HEADSET |
 				    wm8994->btn_mask);
@@ -3940,7 +3912,6 @@ static irqreturn_t wm8958_mic_irq(int irq, void *data)
 		goto out;
 	}
 
-	wm8994->mic_status = reg;
 	id_delay = wm8994->wm8994->pdata.mic_id_delay;
 
 	if (wm8994->mic_detecting)
@@ -3948,10 +3919,9 @@ static irqreturn_t wm8958_mic_irq(int irq, void *data)
 				   &wm8994->mic_complete_work,
 				   msecs_to_jiffies(id_delay));
 	else
-		wm8958_button_det(component, reg);
+		wm8958_button_det(component, wm8958_mic_detect_reg);
 
 out:
-	pm_runtime_put(component->dev);
 	return IRQ_HANDLED;
 }
 

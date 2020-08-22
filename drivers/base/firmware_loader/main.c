@@ -469,6 +469,9 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv,
 	size_t msize = INT_MAX;
 	void *buffer = NULL;
 
+        pr_err("%s: init", __func__);
+
+
 	/* Already populated data member means we're loading into a buffer */
 	if (!decompress && fw_priv->data) {
 		buffer = fw_priv->data;
@@ -479,6 +482,9 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv,
 	path = __getname();
 	if (!path)
 		return -ENOMEM;
+
+        pr_err("%s: init: path=%s", __func__, path);
+
 
 	for (i = 0; i < ARRAY_SIZE(fw_path); i++) {
 		/* skip the unset customized path */
@@ -493,19 +499,20 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv,
 		}
 
 		fw_priv->size = 0;
+		pr_err("%s: loading firmware=%s\n", __func__, path);
 		rc = kernel_read_file_from_path(path, &buffer, &size,
 						msize, id);
 		if (rc) {
 			if (rc != -ENOENT)
-				dev_warn(device, "loading %s failed with error %d\n",
+				pr_err("%s: loading %s failed with error %d\n", __func__,
 					 path, rc);
 			else
-				dev_dbg(device, "loading %s failed for no such file or directory.\n",
+				pr_err("%s: loading %s failed for no such file or directory.\n", __func__,
 					 path);
 			continue;
 		}
 		if (decompress) {
-			dev_dbg(device, "f/w decompressing %s\n",
+			pr_err("%s: f/w decompressing %s\n", __func__,
 				fw_priv->fw_name);
 			rc = decompress(device, fw_priv, size, buffer);
 			/* discard the superfluous original content */
@@ -516,7 +523,7 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv,
 				continue;
 			}
 		} else {
-			dev_dbg(device, "direct-loading %s\n",
+			pr_err("%s: direct-loading %s\n", __func__,
 				fw_priv->fw_name);
 			if (!fw_priv->data)
 				fw_priv->data = buffer;

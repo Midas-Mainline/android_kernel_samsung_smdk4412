@@ -614,11 +614,16 @@ static int brcmf_fw_request_firmware(const struct firmware **fw,
 		strlcat(alt_path, ".txt", BRCMF_FW_NAME_LEN);
 
 		ret = request_firmware(fw, alt_path, fwctx->dev);
+		pr_err("%s: requested firmware %s, ret=%d\n", __func__, alt_path, ret);
+
 		if (ret == 0)
 			return ret;
 	}
 
-	return request_firmware(fw, cur->path, fwctx->dev);
+	ret = request_firmware(fw, cur->path, fwctx->dev);
+	pr_err("%s: requested firmware %s, ret=%d\n", __func__, cur->path, ret);
+
+	return ret;
 }
 
 static void brcmf_fw_request_done(const struct firmware *fw, void *ctx)

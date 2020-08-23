@@ -12,6 +12,7 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/miscdevice.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/videodev2.h>
@@ -931,6 +932,11 @@ err_alloc:
 	return ret;
 }
 
+static int s5p_mfc_open1(struct inode *inode, struct file *file)
+{
+	return s5p_mfc_open(file);
+}
+
 /* Release MFC context */
 static int s5p_mfc_release(struct file *file)
 {
@@ -985,6 +991,11 @@ static int s5p_mfc_release(struct file *file)
 		mutex_unlock(&dev->mfc_mutex);
 
 	return 0;
+}
+
+static int s5p_mfc_release1(struct inode *inode, struct file *file)
+{
+	return s5p_mfc_release(file);
 }
 
 /* Poll */
@@ -1262,6 +1273,21 @@ static void s5p_mfc_unconfigure_dma_memory(struct s5p_mfc_dev *mfc_dev)
 		s5p_mfc_unconfigure_2port_memory(mfc_dev);
 }
 
+static const struct file_operations s5p_mfc_fops1 = {
+        .owner          = THIS_MODULE,
+        .open = s5p_mfc_open1,
+        .release = s5p_mfc_release1,
+        .poll = s5p_mfc_poll,
+        .unlocked_ioctl = video_ioctl2,
+        .mmap = s5p_mfc_mmap,
+};
+
+static struct miscdevice mfc_miscdev = {
+        .minor  = 252,
+        .name   = "s5p-mfc",
+        .fops   = &s5p_mfc_fops1,
+};
+
 /* MFC probe function */
 static int s5p_mfc_probe(struct platform_device *pdev)
 {
@@ -1392,10 +1418,17 @@ static int s5p_mfc_probe(struct platform_device *pdev)
 	v4l2_info(&dev->v4l2_dev,
 		  "encoder registered as /dev/video%d\n", dev->vfd_enc->num);
 
+        ret = misc_register(&mfc_miscdev);
+        if (ret) {
+                pr_err("%s: MFC can't misc register on minor=%d\n", __func__, 252);
+                goto err_misc_reg;
+        }
+
 	pr_debug("%s--\n", __func__);
 	return 0;
 
 /* Deinit MFC if probe had failed */
+err_misc_reg:
 err_enc_reg:
 	video_unregister_device(dev->vfd_dec);
 err_dec_reg:

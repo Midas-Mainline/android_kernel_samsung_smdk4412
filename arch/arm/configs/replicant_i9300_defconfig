@@ -503,7 +503,7 @@ CONFIG_ARM_APPENDED_DTB=y
 CONFIG_ARM_ATAG_DTB_COMPAT=y
 # CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER is not set
 CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y
-CONFIG_CMDLINE="console=tty0 loglevel=8 root=PARTLABEL=SYSTEM init=/init rootwait loglevel=8 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 no_console_suspend firmware_class.path=/system/vendor/lib/firmware"
+CONFIG_CMDLINE="console=tty0 loglevel=8 root=PARTLABEL=SYSTEM init=/init rootwait loglevel=8 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 no_console_suspend firmware_class.path=/system/vendor/lib/firmware exynosdrm.pixel_order=1"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -1411,6 +1411,7 @@ CONFIG_BLK_DEV_CRYPTOLOOP=y
 CONFIG_BLK_DEV_RAM=y
 CONFIG_BLK_DEV_RAM_COUNT=16
 CONFIG_BLK_DEV_RAM_SIZE=8192
+CONFIG_SAMSUNG_MODEMCTL=y
 # CONFIG_CDROM_PKTCDVD is not set
 # CONFIG_ATA_OVER_ETH is not set
 # CONFIG_BLK_DEV_RBD is not set
@@ -1686,6 +1687,7 @@ CONFIG_USB_NET_AX88179_178A=y
 CONFIG_USB_NET_CDCETHER=y
 # CONFIG_USB_NET_CDC_EEM is not set
 CONFIG_USB_NET_CDC_NCM=y
+ONFIG_USB_NET_SAMSUNG_IPC=y
 # CONFIG_USB_NET_HUAWEI_CDC_NCM is not set
 # CONFIG_USB_NET_CDC_MBIM is not set
 # CONFIG_USB_NET_DM9601 is not set
@@ -1749,6 +1751,7 @@ CONFIG_BRCMDBG=y
 # Enable WiMAX (Networking options) to see the WiMAX drivers
 #
 # CONFIG_WAN is not set
+CONFIG_NET_SAMSUNG_IPC=y
 # CONFIG_NETDEVSIM is not set
 # CONFIG_NET_FAILOVER is not set
 # CONFIG_ISDN is not set
@@ -2680,7 +2683,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
 # CONFIG_VIDEO_MEM2MEM_DEINTERLACE is not set
 # CONFIG_VIDEO_SAMSUNG_S5P_G2D is not set
 CONFIG_VIDEO_SAMSUNG_S5P_JPEG=y
-CONFIG_VIDEO_SAMSUNG_S5P_MFC=y
+CONFIG_VIDEO_SAMSUNG_S5P_MFC=m
 # CONFIG_VIDEO_SAMSUNG_EXYNOS_GSC is not set
 # CONFIG_VIDEO_SH_VEU is not set
 CONFIG_V4L_TEST_DRIVERS=y
@@ -2707,6 +2710,7 @@ CONFIG_VIDEO_V4L2_TPG=m
 #
 # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
 CONFIG_VIDEO_IR_I2C=m
+
 
 #
 # I2C Encoders, decoders, sensors and other helper chips
@@ -3605,6 +3609,7 @@ CONFIG_USB_DWC2_DUAL_ROLE=y
 # CONFIG_USB_ULPI is not set
 # end of USB Physical Layer drivers
 
+CONFIG_USB_XMM6262_BOOT=y
 CONFIG_USB_GADGET=y
 # CONFIG_USB_GADGET_DEBUG is not set
 # CONFIG_USB_GADGET_DEBUG_FILES is not set
@@ -3684,7 +3689,6 @@ CONFIG_USB_FUNCTIONFS_GENERIC=y
 # CONFIG_USB_G_SERIAL is not set
 # CONFIG_USB_MIDI_GADGET is not set
 # CONFIG_USB_G_PRINTER is not set
-# CONFIG_USB_CDC_COMPOSITE is not set
 # CONFIG_USB_G_ACM_MS is not set
 # CONFIG_USB_G_MULTI is not set
 # CONFIG_USB_G_HID is not set

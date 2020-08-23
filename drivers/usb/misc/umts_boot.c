@@ -13,12 +13,12 @@
 #include <linux/usb/cdc.h>
 
 #ifdef CONFIG_USB_DYNAMIC_MINORS
-#define USB_XMM6262_MINOR_BASE 0
+#define USB_UMTS_MINOR_BASE 0
 #else
-#define USB_XMM6262_MINOR_BASE 191 /* TODO */
+#define USB_UMTS_MINOR_BASE 191 /* TODO */
 #endif
 
-struct xmm6262 {
+struct umts {
 	struct usb_device *udev;
 	struct usb_interface *intf;
 	struct usb_interface *data_intf;
@@ -44,12 +44,12 @@ struct xmm6262 {
 	struct mutex io_mutex;
 };
 
-static struct usb_driver xmm6262_boot_driver;
-static int xmm6262_boot_start_rx(struct xmm6262 *dev);
+static struct usb_driver umts_boot_driver;
+static int umts_boot_start_rx(struct umts *dev);
 
-static void xmm6262_boot_rx_callback(struct urb *urb)
+static void umts_boot_rx_callback(struct urb *urb)
 {
-	struct xmm6262 *dev = urb->context;
+	struct umts *dev = urb->context;
 	struct sk_buff *skb;
 	int ret = 0;
 
@@ -72,7 +72,7 @@ static void xmm6262_boot_rx_callback(struct urb *urb)
 	} /* skip 0-length URBs */
 
 	mutex_unlock(&dev->rx_mutex);
-	xmm6262_boot_start_rx(dev);
+	umts_boot_start_rx(dev);
 	return;
 error:
 	mutex_unlock(&dev->rx_mutex);
@@ -80,7 +80,7 @@ error:
 
 }
 
-static int xmm6262_boot_start_rx(struct xmm6262 *dev)
+static int umts_boot_start_rx(struct umts *dev)
 {
 	struct urb *urb = dev->bulk_in_urb;
 
@@ -100,7 +100,7 @@ static int xmm6262_boot_start_rx(struct xmm6262 *dev)
 				dev->bulk_in_addr),
 			dev->bulk_in_buf,
 			dev->bulk_in_size,
-			xmm6262_boot_rx_callback,
+			umts_boot_rx_callback,
 			dev);
 
 	ret = usb_submit_urb(dev->bulk_in_urb, GFP_KERNEL);
@@ -114,15 +114,15 @@ static int xmm6262_boot_start_rx(struct xmm6262 *dev)
 	return ret;
 }
 
-static int xmm6262_boot_open(struct inode *inode, struct file *file)
+static int umts_boot_open(struct inode *inode, struct file *file)
 {
-	struct xmm6262 *dev;
+	struct umts *dev;
 	struct usb_interface *intf;
 	int subminor;
 
 	subminor = iminor(inode);
 
-	intf = usb_find_interface(&xmm6262_boot_driver, subminor);
+	intf = usb_find_interface(&umts_boot_driver, subminor);
 	if (!intf) {
 		pr_err("%s: can't find device for minor %d\n",
 				__func__, subminor);
@@ -134,22 +134,22 @@ static int xmm6262_boot_open(struct inode *inode, struct file *file)
 		return -ENODEV;
 
 	/* begin receiving data */
-	xmm6262_boot_start_rx(dev);
+	umts_boot_start_rx(dev);
 
 	file->private_data = dev;
 	return 0;
 }
 
-static int xmm6262_boot_release(struct inode *inode, struct file *file)
+static int umts_boot_release(struct inode *inode, struct file *file)
 {
 	/* TODO stop RX */
 	return 0;
 }
 
-static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
+static ssize_t umts_boot_read(struct file *file, char *buf, size_t count,
 		loff_t *ppos)
 {
-	struct xmm6262 *dev = file->private_data;
+	struct umts *dev = file->private_data;
 
 	struct sk_buff *skb = NULL;
 	int to_read = count;
@@ -175,7 +175,7 @@ static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
 		if (!skb) {
 			/* no data waiting:
 			 * start rx again in case it failed for some reason */
-			xmm6262_boot_start_rx(dev);
+			umts_boot_start_rx(dev);
 			break;
 		}
 
@@ -208,9 +208,9 @@ end:
 	return ret;
 }
 
-void xmm6262_boot_write_callback(struct urb *urb)
+void umts_boot_write_callback(struct urb *urb)
 {
-	struct xmm6262 *dev = urb->context;
+	struct umts *dev = urb->context;
 
 	if (urb->status) {
 		if (urb->status != -ENOENT &&
@@ -223,10 +223,10 @@ void xmm6262_boot_write_callback(struct urb *urb)
 	usb_free_urb(urb);
 }
 
-static ssize_t xmm6262_boot_write(struct file *file, const char *user_buf, size_t count,
+static ssize_t umts_boot_write(struct file *file, const char *user_buf, size_t count,
 		loff_t *ppos)
 {
-	struct xmm6262 *dev = file->private_data;
+	struct umts *dev = file->private_data;
 	struct urb *urb = NULL;
 	char *buf = NULL;
 	int ret;
@@ -268,7 +268,7 @@ static ssize_t xmm6262_boot_write(struct file *file, const char *user_buf, size_
 			usb_sndbulkpipe(dev->udev,
 				dev->bulk_out_addr),
 			buf, count,
-			xmm6262_boot_write_callback, dev);
+			umts_boot_write_callback, dev);
 
 	ret = usb_submit_urb(urb, GFP_KERNEL);
 	mutex_unlock(&dev->io_mutex);
@@ -288,9 +288,9 @@ error:
 	return ret;
 }
 
-static unsigned int xmm6262_boot_poll(struct file *file, struct poll_table_struct *p)
+static unsigned int umts_boot_poll(struct file *file, struct poll_table_struct *p)
 {
-	struct xmm6262 *dev = file->private_data;
+	struct umts *dev = file->private_data;
 
 	if (!skb_queue_empty(&dev->in_queue)) {
 		return POLLIN;
@@ -299,26 +299,26 @@ static unsigned int xmm6262_boot_poll(struct file *file, struct poll_table_struc
 	return 0;
 }
 
-static const struct file_operations xmm6262_boot_fops = {
+static const struct file_operations umts_boot_fops = {
 	.owner = THIS_MODULE,
-	.read = xmm6262_boot_read,
-	.write = xmm6262_boot_write,
-	.poll = xmm6262_boot_poll,
-	.open = xmm6262_boot_open,
-	.release = xmm6262_boot_release,
+	.read = umts_boot_read,
+	.write = umts_boot_write,
+	.poll = umts_boot_poll,
+	.open = umts_boot_open,
+	.release = umts_boot_release,
 };
 
-static struct usb_class_driver xmm6262_boot_class = {
-	.name = "xmm6262_boot%d",
-	.fops = &xmm6262_boot_fops,
-	.minor_base = USB_XMM6262_MINOR_BASE,
+static struct usb_class_driver umts_boot_class = {
+	.name = "umts_boot%d",
+	.fops = &umts_boot_fops,
+	.minor_base = USB_UMTS_MINOR_BASE,
 };
 
-static int xmm6262_probe(struct usb_interface *intf,
+static int umts_probe(struct usb_interface *intf,
 		const struct usb_device_id *id)
 {
 	int ret, buflen;
-	struct xmm6262 *dev;
+	struct umts *dev;
 	struct usb_endpoint_descriptor *bulk_in, *bulk_out;
 	struct usb_cdc_union_desc *union_header = NULL;
 	struct usb_cdc_parsed_header h;
@@ -372,7 +372,7 @@ static int xmm6262_probe(struct usb_interface *intf,
 		return -EINVAL;
 	}
 
-	ret = usb_register_dev(intf, &xmm6262_boot_class);
+	ret = usb_register_dev(intf, &umts_boot_class);
 	if (ret) {
 		return ret;
 	}
@@ -386,14 +386,14 @@ static int xmm6262_probe(struct usb_interface *intf,
 
 	dev->bulk_out_addr = bulk_out->bEndpointAddress;
 
-	dev_info(&intf->dev, "Loaded XMM6262 boot serial device!\n");
+	dev_info(&intf->dev, "Loaded umts boot serial device!\n");
 
 	return 0;
 }
 
-static void xmm6262_disconnect(struct usb_interface *intf)
+static void umts_disconnect(struct usb_interface *intf)
 {
-	struct xmm6262 *dev = usb_get_intfdata(intf);
+	struct umts *dev = usb_get_intfdata(intf);
 	struct usb_driver *usbdrv = to_usb_driver(intf->dev.driver);
 
 	mutex_lock(&dev->rx_mutex);
@@ -402,11 +402,11 @@ static void xmm6262_disconnect(struct usb_interface *intf)
 	mutex_unlock(&dev->rx_mutex);
 
 	usb_driver_release_interface(usbdrv, dev->data_intf);
-	usb_deregister_dev(intf, &xmm6262_boot_class);
+	usb_deregister_dev(intf, &umts_boot_class);
 
 }
 
-static struct usb_device_id xmm6262_idtable[] = {
+static struct usb_device_id umts_idtable[] = {
 	/* Infineon XMM626x */
 	/* Initially appears as a CDC device that needs firmware uploaded before boot will continue */
 	{USB_DEVICE_AND_INTERFACE_INFO(0x058b, 0x0041,
@@ -414,19 +414,19 @@ static struct usb_device_id xmm6262_idtable[] = {
 	{}
 };
 
-static struct usb_driver xmm6262_boot_driver = {
-	.name = "xmm6262_boot",
-	.probe = xmm6262_probe,
-	.disconnect = xmm6262_disconnect,
-	//.suspend = xmm6262_suspend,
-	//.resume = xmm6262_resume,
-	//.reset_resume = xmm6262_reset_resume,
-	.id_table = xmm6262_idtable,
+static struct usb_driver umts_boot_driver = {
+	.name = "umts_boot",
+	.probe = umts_probe,
+	.disconnect = umts_disconnect,
+	//.suspend = umts_suspend,
+	//.resume = umts_resume,
+	//.reset_resume = umts_reset_resume,
+	.id_table = umts_idtable,
 	.supports_autosuspend = 0,
 };
 
-module_usb_driver(xmm6262_boot_driver);
+module_usb_driver(umts_boot_driver);
 
-MODULE_DEVICE_TABLE(usb, xmm6262_idtable);
+MODULE_DEVICE_TABLE(usb, umts_idtable);
 
 MODULE_LICENSE("GPL");

@@ -1002,7 +1002,7 @@ static int s6e8aa0_backlight_register(struct s6e8aa0 *ctx)
 						     &props);
 	if (IS_ERR(ctx->bl_dev)) {
 		ret = PTR_ERR(ctx->bl_dev);
-		DRM_DEV_ERROR(dev, "error registering backlight device (%d)\n",
+		dev_err(dev, "error registering backlight device (%d)\n",
 			      ret);
 	}
 

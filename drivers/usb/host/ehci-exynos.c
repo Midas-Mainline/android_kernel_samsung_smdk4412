@@ -153,13 +153,22 @@ static ssize_t store_ehci_power(struct device *dev,
 		dev_info(dev, "Powering off EHCI\n");
 		exynos_ehci->power_on = false;
 		usb_remove_hcd(hcd);
-		exynos_ehci_phy_disable(dev);
+		/* TODO: at least take the phy number from the device tree */
+		if (!IS_ERR(exynos_ehci->phy[1])) {
+			dev_info(dev, "Powering off EHCI phy #1\n");
+			phy_power_off(exynos_ehci->phy[1]);
+		}
+
 	} else if (power_on) {
 		dev_info(dev, "Powering on EHCI\n");
 		if (exynos_ehci->power_on)
 			usb_remove_hcd(hcd);
 
-		exynos_ehci_phy_enable(dev);
+		/* TODO: at least take the phy number from the device tree */
+		if (!IS_ERR(exynos_ehci->phy[1])) {
+			dev_info(dev, "Powering on EHCI phy #1\n");
+			phy_power_on(exynos_ehci->phy[1]);
+		}
 
 		writel(EHCI_INSNREG00_ENABLE_DMA_BURST | EHCI_INSNREG00_OHCI_SUSP_LEGACY, EHCI_INSNREG00(hcd->regs));
 

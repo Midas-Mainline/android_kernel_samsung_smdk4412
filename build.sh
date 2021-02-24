@@ -215,7 +215,7 @@ if [ "${os}" = "Android" ] ; then
     cmdline="${cmdline} exynosdrm.pixel_order=1"
 elif [ "${os}" = "GNU/Linux" ] ; then
   unset_kconfig CONFIG_USB_FUNCTIONFS
-  cmdline="${cmdline} root=/dev/mmcblk0 rw"
+  cmdline="${cmdline} root=/dev/mmcblk0p1 rw"
 fi
 
 cmdline="${cmdline} buildvariant=eng device=${device} rootwait console=ttySAC2,115200 loglevel=8"

@@ -66,7 +66,7 @@ static int sipc_misc_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static unsigned int sipc_misc_poll(struct file *filp, struct poll_table_struct *wait)
+static __poll_t sipc_misc_poll(struct file *filp, struct poll_table_struct *wait)
 {
 	struct sipc_io_channel *chan = misc_to_chan(filp->private_data);
 

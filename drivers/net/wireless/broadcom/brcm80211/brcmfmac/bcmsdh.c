@@ -30,6 +30,7 @@
 #include <linux/mmc/host.h>
 #include <linux/pm_runtime.h>
 #include <linux/suspend.h>
+#include <linux/workqueue.h>
 #include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/acpi.h>
@@ -1167,7 +1168,23 @@ static struct sdio_driver brcmf_sdmmc_driver = {
 	},
 };
 
+static void brcmf_sdio_register_fn(struct work_struct *work);
+void _brcmf_sdio_register(void);
+
+static DECLARE_DELAYED_WORK(brcmf_sdio_register_delayedwork, brcmf_sdio_register_fn);
+static void brcmf_sdio_register_fn(struct work_struct *work)
+{
+       pr_err("%s: init\n", __func__);
+
+       _brcmf_sdio_register();
+}
+
 void brcmf_sdio_register(void)
+{
+       schedule_delayed_work(&brcmf_sdio_register_delayedwork, msecs_to_jiffies(40000));
+}
+
+void _brcmf_sdio_register(void)
 {
 	int ret;
 

@@ -413,6 +413,8 @@ static struct snd_soc_card midas_card = {
 	.late_probe = midas_late_probe,
 };
 
+extern struct wm8994_priv *g_wm8994;
+
 static int midas_probe(struct platform_device *pdev)
 {
 	struct device_node *cpu_dai_node = NULL, *codec_dai_node = NULL;

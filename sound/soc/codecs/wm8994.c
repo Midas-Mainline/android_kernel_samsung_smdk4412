@@ -4141,6 +4141,8 @@ static irqreturn_t wm8994_temp_shut(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+struct wm8994_priv *g_wm8994;
+
 static int wm8994_component_probe(struct snd_soc_component *component)
 {
 	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(component);
@@ -4539,6 +4541,8 @@ static int wm8994_component_probe(struct snd_soc_component *component)
 					ARRAY_SIZE(wm8958_intercon));
 		break;
 	}
+
+	g_wm8994 = wm8994;
 
 	return 0;
 

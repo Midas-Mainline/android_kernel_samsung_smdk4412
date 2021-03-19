@@ -415,14 +415,12 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 						MAX77693_DXOVP_SHIFT);
 			if ((vbvolt == 0x1) && (dxovp)) {
 				pr_err("%s: D+/D- ovp state\n", __func__);
-
 				/* disable CHGIN protection FETs */
 				ret = regmap_read(regmap,
 					MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
 				regmap_update_bits(regmap, MAX77693_CHG_REG_CHG_CNFG_00,
 					CHG_CNFG_00_DIS_MUIC_CTRL_MASK,
 					CHG_CNFG_00_DIS_MUIC_CTRL_MASK);
-
 				chg_det_erred = true;
 				state = POWER_SUPPLY_TYPE_MAINS;
 				goto chg_det_finish;
@@ -465,7 +463,7 @@ chg_det_err:
 	case 0x0:		/* Noting attached */
 		/* clear regulation loop flag */
 		chg->reg_loop_deted = false;
-		state = POWER_SUPPLY_TYPE_UNKNOWN;
+		state = POWER_SUPPLY_TYPE_BATTERY;
 		break;
 	case 0x1:               /* USB cabled */
 		state = POWER_SUPPLY_TYPE_USB;
@@ -480,16 +478,15 @@ chg_det_err:
 		state = POWER_SUPPLY_TYPE_MAINS;
 		break;
 	default:
-		state = POWER_SUPPLY_TYPE_UNKNOWN;
+		state = POWER_SUPPLY_TYPE_BATTERY;
 		break;
 	}
 
-	
 chg_det_finish:
 	pr_err("%s: chg_det_erred(%d) cable type(%d)\n", __func__, chg_det_erred, state);
 
 	/* if cable is nothing,,, */
-	if (state == POWER_SUPPLY_TYPE_UNKNOWN) {
+	if (state == POWER_SUPPLY_TYPE_BATTERY) {
 		if (!otg_detected) {
 			/* enable CHGIN protection FETs */
 			ret = regmap_read(regmap,

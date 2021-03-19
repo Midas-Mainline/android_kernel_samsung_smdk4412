@@ -268,10 +268,10 @@ static ssize_t power_supply_show_property(struct device *dev,
 	struct power_supply_attr *ps_attr = to_ps_attr(attr);
 	enum power_supply_property psp = dev_attr_psp(attr);
 	union power_supply_propval value;
-
+/*
 	if (psp == POWER_SUPPLY_PROP_TYPE) {
 		value.intval = psy->desc->type;
-	} else {
+	} else {*/
 		ret = power_supply_get_property(psy, psp, &value);
 
 		if (ret < 0) {
@@ -284,7 +284,7 @@ static ssize_t power_supply_show_property(struct device *dev,
 					attr->attr.name, ret);
 			return ret;
 		}
-	}
+//	}
 
 	if (ps_attr->text_values_len > 0 &&
 	    value.intval < ps_attr->text_values_len && value.intval >= 0) {
@@ -356,8 +356,8 @@ static umode_t power_supply_attr_is_visible(struct kobject *kobj,
 	if (!power_supply_attrs[attrno].prop_name)
 		return 0;
 
-	if (attrno == POWER_SUPPLY_PROP_TYPE)
-		return mode;
+	/*if (attrno == POWER_SUPPLY_PROP_TYPE)
+		return mode;*/
 
 	for (i = 0; i < psy->desc->num_properties; i++) {
 		int property = psy->desc->properties[i];
@@ -467,10 +467,10 @@ int power_supply_uevent(struct device *dev, struct kobj_uevent_env *env)
 	prop_buf = (char *)get_zeroed_page(GFP_KERNEL);
 	if (!prop_buf)
 		return -ENOMEM;
-
+/*
 	ret = add_prop_uevent(dev, env, POWER_SUPPLY_PROP_TYPE, prop_buf);
 	if (ret)
-		goto out;
+		goto out;*/
 
 	for (j = 0; j < psy->desc->num_properties; j++) {
 		ret = add_prop_uevent(dev, env, psy->desc->properties[j],

@@ -211,10 +211,8 @@ int pm_wake_lock(const char *buf)
 	size_t len;
 	int ret = 0;
 
-	pr_err("%s: init\n", __func__);
-
-	/*if (!capable(CAP_BLOCK_SUSPEND))
-		return -EPERM;*/
+	if (!capable(CAP_BLOCK_SUSPEND))
+		return -EPERM;
 
 	while (*str && !isspace(*str))
 		str++;
@@ -232,8 +230,6 @@ int pm_wake_lock(const char *buf)
 
 	mutex_lock(&wakelocks_lock);
 
-	pr_err("%s: wakelock_lookup_add\n", __func__);
-
 	wl = wakelock_lookup_add(buf, len, true);
 	if (IS_ERR(wl)) {
 		ret = PTR_ERR(wl);
@@ -249,7 +245,6 @@ int pm_wake_lock(const char *buf)
 	}
 
 	wakelocks_lru_most_recent(wl);
-	pr_err("%s: after wakelock_lookup_add\n", __func__);
 
  out:
 	mutex_unlock(&wakelocks_lock);
@@ -262,8 +257,8 @@ int pm_wake_unlock(const char *buf)
 	size_t len;
 	int ret = 0;
 
-	/*if (!capable(CAP_BLOCK_SUSPEND))
-		return -EPERM;*/
+	if (!capable(CAP_BLOCK_SUSPEND))
+		return -EPERM;
 
 	len = strlen(buf);
 	if (!len)

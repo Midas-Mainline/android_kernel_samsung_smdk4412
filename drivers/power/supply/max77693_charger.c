@@ -6,6 +6,7 @@
 // Krzysztof Kozlowski <krzk@kernel.org>
 
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/platform_device.h>
 #include <linux/power_supply.h>
 #include <linux/regmap.h>
@@ -14,6 +15,109 @@
 #include <linux/mfd/max77693-private.h>
 #include <linux/extcon.h>
 #include <linux/regulator/consumer.h>
+
+/* MAX77693 Registers(defined @max77693-private.h) */
+
+/* MAX77693_CHG_REG_CHG_INT */
+#define MAX77693_BYP_I			(1 << 0)
+#define MAX77693_THM_I			(1 << 2)
+#define MAX77693_BAT_I			(1 << 3)
+#define MAX77693_CHG_I			(1 << 4)
+#define MAX77693_CHGIN_I		(1 << 6)
+
+/* MAX77693_CHG_REG_CHG_INT_MASK */
+#define MAX77693_BYP_IM			(1 << 0)
+#define MAX77693_THM_IM			(1 << 2)
+#define MAX77693_BAT_IM			(1 << 3)
+#define MAX77693_CHG_IM			(1 << 4)
+#define MAX77693_CHGIN_IM		(1 << 6)
+
+/* MAX77693_CHG_REG_CHG_INT_OK */
+#define MAX77693_BYP_OK			0x01
+#define MAX77693_BYP_OK_SHIFT		0
+#define MAX77693_THM_OK			0x04
+#define MAX77693_THM_OK_SHIFT		2
+#define MAX77693_BAT_OK			0x08
+#define MAX77693_BAT_OK_SHIFT		3
+#define MAX77693_CHG_OK			0x10
+#define MAX77693_CHG_OK_SHIFT		4
+#define MAX77693_CHGIN_OK		0x40
+#define MAX77693_CHGIN_OK_SHIFT		6
+#define MAX77693_DETBAT			0x80
+#define MAX77693_DETBAT_SHIFT		7
+
+/* MAX77693_CHG_REG_CHG_DTLS_00 */
+#define MAX77693_THM_DTLS		0x07
+#define MAX77693_THM_DTLS_SHIFT		0
+#define MAX77693_CHGIN_DTLS		0x60
+#define MAX77693_CHGIN_DTLS_SHIFT	5
+
+/* MAX77693_CHG_REG_CHG_DTLS_01 */
+#define MAX77693_CHG_DTLS		0x0F
+#define MAX77693_CHG_DTLS_SHIFT		0
+#define MAX77693_BAT_DTLS		0x70
+#define MAX77693_BAT_DTLS_SHIFT		4
+
+/* MAX77693_CHG_REG_CHG_DTLS_02 */
+#define MAX77693_BYP_DTLS		0x0F
+#define MAX77693_BYP_DTLS_SHIFT		0
+#define MAX77693_BYP_DTLS0	0x1
+#define MAX77693_BYP_DTLS1	0x2
+#define MAX77693_BYP_DTLS2	0x4
+#define MAX77693_BYP_DTLS3	0x8
+
+/* MAX77693_CHG_REG_CHG_CNFG_00 */
+#define MAX77693_MODE_DEFAULT	0x04
+#define MAX77693_MODE_CHGR	0x01
+#define MAX77693_MODE_OTG	0x02
+#define MAX77693_MODE_BUCK	0x04
+
+/* MAX77693_CHG_REG_CHG_CNFG_02 */
+#define MAX77693_CHG_CC		0x3F
+
+/* MAX77693_CHG_REG_CHG_CNFG_03 */
+#define MAX77693_TO_ITH_MASK	0x06
+#define MAX77693_TO_ITH_SHIFT	0
+#define MAX77693_TO_TIME_MASK	0x38
+#define MAX77693_TO_TIME_SHIFT	3
+
+/* MAX77693_CHG_REG_CHG_CNFG_04 */
+#define MAX77693_CHG_MINVSYS_MASK	0xE0
+#define MAX77693_CHG_MINVSYS_SHIFT	5
+#define MAX77693_CHG_MINVSYS_3_4V	0x04
+#define MAX77693_CHG_MINVSYS_3_6V	0x06
+#define MAX77693_CHG_CV_PRM_MASK		0x1F
+#define MAX77693_CHG_CV_PRM_SHIFT		0
+#define MAX77693_CHG_CV_PRM_4_20V		0x16
+#define MAX77693_CHG_CV_PRM_4_30V		0x1A
+#define MAX77693_CHG_CV_PRM_4_35V		0x1D
+#define MAX77693_CHG_CV_PRM_4_40V		0x1F
+
+/* MAX77693_CHG_REG_CHG_CNFG_06 */
+#define MAX77693_CHG_CHGPROT		0x0C
+#define MAX77693_CHG_CHGPROT_SHIFT	2
+#define MAX77693_CHG_CHGPROT_UNLOCK	0x03
+
+/* MAX77693_CHG_REG_CHG_CNFG_09 */
+#define MAX77693_CHG_CHGIN_LIM	0x7F
+
+/* MAX77693_MUIC_REG_CDETCTRL1 */
+#define MAX77693_CHGTYPMAN		0x02
+#define MAX77693_CHGTYPMAN_SHIFT	1
+
+/* MAX77693_MUIC_REG_STATUS2 */
+#define MAX77693_VBVOLT			0x40
+#define MAX77693_VBVOLT_SHIFT		6
+#define MAX77693_DXOVP			0x20
+#define MAX77693_DXOVP_SHIFT		5
+#define MAX77693_CHGDETRUN		0x08
+#define MAX77693_CHGDETRUN_SHIFT	3
+#define MAX77693_CHGTYPE		0x07
+#define MAX77693_CHGTYPE_SHIFT		0
+
+
+#define DET_ERR_RETRY	5
+#define DET_ERR_DELAY	200
 
 #define MAX77693_CHARGER_NAME				"max77693-charger"
 #define MAX77693_EXTCON_DEV_NAME			"max77693-muic"
@@ -25,17 +129,21 @@ struct max77693_charger {
 	struct max77693_dev	*max77693;
 	struct power_supply	*charger;
 	struct regulator	*regu;
+	struct mutex		ops_lock;
 
 	u32 constant_volt;
 	u32 min_system_volt;
 	u32 thermal_regulation_temp;
 	u32 batttery_overcurrent;
 	u32 charge_input_threshold_volt;
+	
+	bool reg_loop_deted;
 
 	/* SDP/DCP USB charging cable notifications */
 	struct {
 		struct extcon_dev *edev;
 		bool connected;
+		int cable_type;
 		struct notifier_block nb;
 		struct work_struct work;
 	} cable;
@@ -195,6 +303,216 @@ static int max77693_get_present(struct regmap *regmap, int *val)
 	return 0;
 }
 
+void max77693_reset_chgtyp(struct max77693_charger *chg)
+{
+	unsigned int reg_data;
+	pr_err("%s\n", __func__);
+
+	/* reset charger detection mode */
+	regmap_read(chg->max77693->regmap_muic,
+			  MAX77693_MUIC_REG_CDETCTRL1,
+			  &reg_data);
+	regmap_update_bits(chg->max77693->regmap_muic,
+			  MAX77693_MUIC_REG_CDETCTRL1,
+			  MAX77693_CHGTYPMAN, MAX77693_CHGTYPMAN);
+}
+
+static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *regmap, int *val)
+{
+	int state, ret;
+	unsigned int reg_data, mu_adc, mu_adc1k, otg;
+	unsigned int dtls_00, chgin_dtls;
+	unsigned int dtls_01, chg_dtls;
+	unsigned int mu_st2, chgdetrun, vbvolt, chgtyp, dxovp;
+
+	bool retry_det, chg_det_erred;
+	bool otg_detected = false;
+	int retry_cnt = 0;
+	pr_err("%s\n", __func__);
+
+	mutex_lock(&chg->ops_lock);
+
+	/* If OTG enabled, skip detecting charger cable */
+	/* So mhl cable does not have adc ID that below condition   */
+	/* can`t include adc1k mask */
+	ret = regmap_bulk_read(chg->max77693->regmap_muic,
+                        MAX77693_MUIC_REG_STATUS1, &reg_data, 2);
+
+	pr_err("%s: MUIC_REG_STATUS1(0x%02x)\n", __func__, reg_data);
+	mu_adc1k = reg_data & (0x1 << 7); /* STATUS1_ADC1K_MASK */
+	mu_adc = reg_data & 0x1F;
+
+	ret = regmap_read(regmap, MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
+	pr_err("%s: CHG_REG_CHG_CNFG_00(0x%02x)\n", __func__, reg_data);
+	otg = reg_data & CHG_CNFG_00_OTG_MASK;
+
+	/* if type detection by otg, do not otg check */
+	if (otg || (mu_adc == 0x00 && !mu_adc1k)) {
+		pr_err("%s: otg enabled(otg(0x%x), adc(0x%x))\n",
+					__func__, otg, mu_adc);
+		state = POWER_SUPPLY_TYPE_BATTERY;
+		otg_detected = true;
+		goto chg_det_finish;
+	}
+
+	chg_det_erred = false;	/* TEMP: set as true for logging */
+	do {
+		retry_det = false;
+
+		ret = regmap_read(regmap, MAX77693_CHG_REG_CHG_DETAILS_00, &dtls_00);
+		ret = regmap_read(regmap, MAX77693_CHG_REG_CHG_DETAILS_01, &dtls_01);
+		ret = regmap_read(chg->max77693->regmap_muic,
+				  MAX77693_MUIC_REG_STATUS2, &mu_st2);
+		chgin_dtls = ((dtls_00 & MAX77693_CHGIN_DTLS) >>
+					MAX77693_CHGIN_DTLS_SHIFT);
+		chg_dtls = ((dtls_01 & MAX77693_CHG_DTLS) >>
+					MAX77693_CHG_DTLS_SHIFT);
+		chgdetrun = ((mu_st2 & MAX77693_CHGDETRUN) >>
+					MAX77693_CHGDETRUN_SHIFT);
+		vbvolt = ((mu_st2 & MAX77693_VBVOLT) >>
+					MAX77693_VBVOLT_SHIFT);
+		chgtyp = ((mu_st2 & MAX77693_CHGTYPE) >>
+					MAX77693_CHGTYPE_SHIFT);
+		if (chg_det_erred)
+			pr_err("%s: CHGIN(0x%x). CHG(0x%x), MU_ST2(0x%x), "
+				"CDR(0x%x), VB(0x%x), CHGTYP(0x%x)\n", __func__,
+						chgin_dtls, chg_dtls, mu_st2,
+						chgdetrun, vbvolt, chgtyp);
+
+		/* input power state */
+		if (((chgin_dtls != 0x0) && (vbvolt == 0x1)) ||
+			((chgin_dtls == 0x0) && (vbvolt == 0x0)) ||
+			(chg->reg_loop_deted == true)) {
+			pr_err("%s: sync power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
+						__func__, chgin_dtls, vbvolt,
+						chg->reg_loop_deted);
+		} else {
+			pr_err("%s: async power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
+						__func__, chgin_dtls, vbvolt,
+						chg->reg_loop_deted);
+			chg_det_erred = true;
+
+			/* check chargable input power */
+			if ((chgin_dtls == 0x0) && (chg_dtls == 0x8)) {
+				pr_err("%s: unchargable power\n", __func__);
+				state = POWER_SUPPLY_TYPE_BATTERY;
+				goto chg_det_finish;
+			}
+		}
+
+		/* charger detect running */
+		if (chgdetrun == 0x1) {
+			pr_err("%s: CDR(0x%x)\n", __func__, chgdetrun);
+			goto chg_det_err;
+		}
+
+		/* muic power and charger type */
+		if (((vbvolt == 0x1) && (chgtyp == 0x00)) ||
+			((vbvolt == 0x0) && (chgtyp != 0x00))) {
+			pr_err("%s: VB(0x%x), CHGTYP(0x%x)\n",
+						__func__, vbvolt, chgtyp);
+
+			/* check D+/D- ovp */
+			dxovp = ((mu_st2 & MAX77693_DXOVP) >>
+						MAX77693_DXOVP_SHIFT);
+			if ((vbvolt == 0x1) && (dxovp)) {
+				pr_err("%s: D+/D- ovp state\n", __func__);
+
+				/* disable CHGIN protection FETs */
+				ret = regmap_read(regmap,
+					MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
+				regmap_update_bits(regmap, MAX77693_CHG_REG_CHG_CNFG_00,
+					CHG_CNFG_00_DIS_MUIC_CTRL_MASK,
+					CHG_CNFG_00_DIS_MUIC_CTRL_MASK);
+
+				chg_det_erred = true;
+				state = POWER_SUPPLY_TYPE_MAINS;
+				goto chg_det_finish;
+			} else {
+				pr_err("%s: async power & chgtyp\n", __func__);
+				goto chg_det_err;
+			}
+		}
+
+		/* charger type ok */
+		if (chg_det_erred)
+			pr_err("%s: chgtyp detect ok, "
+				"CHGIN(0x%x). MU_ST2(0x%x), "
+				"CDR(0x%x), VB(0x%x), CHGTYP(0x%x)\n",
+				__func__, chgin_dtls,  mu_st2,
+				chgdetrun, vbvolt, chgtyp);
+
+		break;
+chg_det_err:
+		retry_det = true;
+		chg_det_erred = true;
+
+		pr_err("%s: chgtyp detect err, retry %d, "
+			"CHGIN(0x%x). MU_ST2(0x%x), CDR(0x%x), VB(0x%x), CHGTYP(0x%x)\n",
+					__func__, ++retry_cnt, chgin_dtls,
+					mu_st2, chgdetrun, vbvolt, chgtyp);
+
+		/* after 200ms * 5 */
+		if (retry_cnt == DET_ERR_RETRY) {
+			pr_err("%s: reset charger detection mode\n",
+							__func__);
+
+			/* reset charger detection mode */
+			max77693_reset_chgtyp(chg);
+		}
+		msleep(DET_ERR_DELAY);
+	} while ((retry_det == true) && (retry_cnt < DET_ERR_RETRY));
+
+	switch (chgtyp) {
+	case 0x0:		/* Noting attached */
+		/* clear regulation loop flag */
+		chg->reg_loop_deted = false;
+		state = POWER_SUPPLY_TYPE_UNKNOWN;
+		break;
+	case 0x1:               /* USB cabled */
+		state = POWER_SUPPLY_TYPE_USB;
+		break;
+	case 0x2:		/* Charging downstream port */
+		state = POWER_SUPPLY_TYPE_USB_CDP;
+		break;
+	case 0x3:		/* Dedicated charger(up to 1.5A) */
+	case 0x4:		/* Apple 500mA charger */
+	case 0x5:		/* Apple 1A or 2A charger */
+	case 0x6:		/* Special charger */
+		state = POWER_SUPPLY_TYPE_MAINS;
+		break;
+	default:
+		state = POWER_SUPPLY_TYPE_UNKNOWN;
+		break;
+	}
+
+	
+chg_det_finish:
+	pr_err("%s: chg_det_erred(%d) cable type(%d)\n", __func__, chg_det_erred, state);
+
+	/* if cable is nothing,,, */
+	if (state == POWER_SUPPLY_TYPE_BATTERY) {
+		if (!otg_detected) {
+			/* enable CHGIN protection FETs */
+			ret = regmap_read(regmap,
+				MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
+			regmap_update_bits(regmap, MAX77693_CHG_REG_CHG_CNFG_00,
+				CHG_CNFG_00_DIS_MUIC_CTRL_MASK, 0);
+		}
+
+		/* clear soft reg state flag */
+		//chg->soft_reg_state = false;
+	}
+
+	chg->cable.cable_type = state;
+
+	mutex_unlock(&chg->ops_lock);
+
+	*val = state;
+
+	return state;
+}
+
 static int max77693_get_online(struct regmap *regmap, int *val)
 {
 	unsigned int data;
@@ -257,7 +575,7 @@ static int max77693_charger_get_property(struct power_supply *psy,
 		ret = max77693_get_present(regmap, &val->intval);
 		break;
 	case POWER_SUPPLY_PROP_ONLINE:
-		ret = max77693_get_online(regmap, &val->intval);
+		ret = max77693_get_cable_type(chg, regmap, &val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		ret = max77693_get_charge_current(regmap, &val->intval);
@@ -826,6 +1144,8 @@ static int max77693_charger_probe(struct platform_device *pdev)
 			MAX77693_EXTCON_DEV_NAME);
 		return -EPROBE_DEFER;
 	}
+	
+	mutex_init(&chg->ops_lock);
 
 	/* set initial value */
 	chg->cable.connected = false;
@@ -911,6 +1231,8 @@ static int max77693_charger_remove(struct platform_device *pdev)
 				   &chg->cable.nb);
 	extcon_unregister_notifier(chg->cable.edev, EXTCON_CHG_USB_DCP,
 				   &chg->cable.nb);
+
+	mutex_destroy(&chg->ops_lock);
 
 	power_supply_unregister(chg->charger);
 

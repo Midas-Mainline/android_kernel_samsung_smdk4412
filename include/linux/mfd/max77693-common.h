@@ -41,5 +41,39 @@ struct max77693_dev {
 	int irq;
 };
 
+struct extcon_dev;
+
+struct max77693_muic_info {
+	struct device *dev;
+	struct max77693_dev *max77693;
+	struct extcon_dev *edev;
+	int prev_cable_type;
+	int prev_cable_type_gnd;
+	int prev_chg_type;
+	int prev_button_type;
+	u8 status[2];
+
+	int irq;
+	struct work_struct irq_work;
+	struct mutex mutex;
+
+	/*
+	 * Use delayed workqueue to detect cable state and then
+	 * notify cable state to notifiee/platform through uevent.
+	 * After completing the booting of platform, the extcon provider
+	 * driver should notify cable state to upper layer.
+	 */
+	struct delayed_work wq_detcable;
+
+	/* Button of dock device */
+	struct input_dev *dock;
+
+	/*
+	 * Default usb/uart path whether UART/USB or AUX_UART/AUX_USB
+	 * h/w path of COMP2/COMN1 on CONTROL1 register.
+	 */
+	int path_usb;
+	int path_uart;
+};
 
 #endif /*  __LINUX_MFD_MAX77693_COMMON_H */

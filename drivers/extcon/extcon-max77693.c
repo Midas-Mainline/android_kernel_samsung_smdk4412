@@ -62,39 +62,6 @@ enum max77693_muic_adc_debounce_time {
 	ADC_DEBOUNCE_TIME_38_62MS,
 };
 
-struct max77693_muic_info {
-	struct device *dev;
-	struct max77693_dev *max77693;
-	struct extcon_dev *edev;
-	int prev_cable_type;
-	int prev_cable_type_gnd;
-	int prev_chg_type;
-	int prev_button_type;
-	u8 status[2];
-
-	int irq;
-	struct work_struct irq_work;
-	struct mutex mutex;
-
-	/*
-	 * Use delayed workqueue to detect cable state and then
-	 * notify cable state to notifiee/platform through uevent.
-	 * After completing the booting of platform, the extcon provider
-	 * driver should notify cable state to upper layer.
-	 */
-	struct delayed_work wq_detcable;
-
-	/* Button of dock device */
-	struct input_dev *dock;
-
-	/*
-	 * Default usb/uart path whether UART/USB or AUX_UART/AUX_USB
-	 * h/w path of COMP2/COMN1 on CONTROL1 register.
-	 */
-	int path_usb;
-	int path_uart;
-};
-
 enum max77693_muic_cable_group {
 	MAX77693_CABLE_GROUP_ADC = 0,
 	MAX77693_CABLE_GROUP_ADC_GND,
@@ -1064,6 +1031,8 @@ static void max77693_muic_detect_cable_wq(struct work_struct *work)
 	max77693_muic_detect_accessory(info);
 }
 
+struct max77693_muic_info *g_max77693_muic_info;
+
 static int max77693_muic_probe(struct platform_device *pdev)
 {
 	struct max77693_dev *max77693 = dev_get_drvdata(pdev->dev.parent);
@@ -1250,6 +1219,8 @@ static int max77693_muic_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&info->wq_detcable, max77693_muic_detect_cable_wq);
 	queue_delayed_work(system_power_efficient_wq, &info->wq_detcable,
 			delay_jiffies);
+
+	g_max77693_muic_info = info;
 
 	return ret;
 }

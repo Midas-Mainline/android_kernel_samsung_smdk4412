@@ -162,28 +162,31 @@ static int max77693_get_charger_state(struct regmap *regmap, int *val)
 	data >>= CHG_DETAILS_01_CHG_SHIFT;
 
 	switch (data) {
-	case MAX77693_CHARGING_PREQUALIFICATION:
-	case MAX77693_CHARGING_FAST_CONST_CURRENT:
-	case MAX77693_CHARGING_FAST_CONST_VOLTAGE:
-	case MAX77693_CHARGING_TOP_OFF:
-	/* In high temp the charging current is reduced, but still charging */
-	case MAX77693_CHARGING_HIGH_TEMP:
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		pr_err("%s: POWER_SUPPLY_STATUS_CHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_CHARGING;
 		break;
-	case MAX77693_CHARGING_DONE:
+	case 0x3:
+	case 0x4:
+		pr_err("%s: POWER_SUPPLY_STATUS_FULL, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_FULL;
 		break;
-	case MAX77693_CHARGING_TIMER_EXPIRED:
-	case MAX77693_CHARGING_THERMISTOR_SUSPEND:
+	case 0x5:
+	case 0x6:
+	case 0x7:
+		pr_err("%s: POWER_SUPPLY_STATUS_NOT_CHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		break;
-	case MAX77693_CHARGING_OFF:
-	case MAX77693_CHARGING_OVER_TEMP:
-	case MAX77693_CHARGING_WATCHDOG_EXPIRED:
+	case 0x8:
+	case 0xA:
+	case 0xB:
+		pr_err("%s: POWER_SUPPLY_STATUS_DISCHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_DISCHARGING;
 		break;
-	case MAX77693_CHARGING_RESERVED:
 	default:
+		pr_err("%s: POWER_SUPPLY_STATUS_UNKNOWN, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_UNKNOWN;
 	}
 
@@ -203,31 +206,26 @@ static int max77693_get_charge_type(struct regmap *regmap, int *val)
 	data >>= CHG_DETAILS_01_CHG_SHIFT;
 
 	switch (data) {
-	case MAX77693_CHARGING_PREQUALIFICATION:
-	/*
-	 * Top-off: trickle or fast? In top-off the current varies between
-	 * 100 and 250 mA. It is higher than prequalification current.
-	 */
-	case MAX77693_CHARGING_TOP_OFF:
+	case 0x0:
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_TRICKLE", __func__);
 		*val = POWER_SUPPLY_CHARGE_TYPE_TRICKLE;
 		break;
-	case MAX77693_CHARGING_FAST_CONST_CURRENT:
-	case MAX77693_CHARGING_FAST_CONST_VOLTAGE:
-	/* In high temp the charging current is reduced, but still charging */
-	case MAX77693_CHARGING_HIGH_TEMP:
+	case 0x1:
+	case 0x2:
+	case 0x3:
 		*val = POWER_SUPPLY_CHARGE_TYPE_FAST;
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_FAST", __func__);
 		break;
-	case MAX77693_CHARGING_DONE:
-	case MAX77693_CHARGING_TIMER_EXPIRED:
-	case MAX77693_CHARGING_THERMISTOR_SUSPEND:
-	case MAX77693_CHARGING_OFF:
-	case MAX77693_CHARGING_OVER_TEMP:
-	case MAX77693_CHARGING_WATCHDOG_EXPIRED:
+	case 0x4:
+	case 0x8:
+	case 0xA:
+	case 0xB:
 		*val = POWER_SUPPLY_CHARGE_TYPE_NONE;
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_NONE", __func__);
 		break;
-	case MAX77693_CHARGING_RESERVED:
 	default:
 		*val = POWER_SUPPLY_CHARGE_TYPE_UNKNOWN;
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_UNKNOWN", __func__);
 	}
 
 	return 0;
@@ -491,7 +489,7 @@ chg_det_finish:
 	pr_err("%s: chg_det_erred(%d) cable type(%d)\n", __func__, chg_det_erred, state);
 
 	/* if cable is nothing,,, */
-	if (state == POWER_SUPPLY_TYPE_BATTERY) {
+	if (state == POWER_SUPPLY_TYPE_UNKNOWN) {
 		if (!otg_detected) {
 			/* enable CHGIN protection FETs */
 			ret = regmap_read(regmap,

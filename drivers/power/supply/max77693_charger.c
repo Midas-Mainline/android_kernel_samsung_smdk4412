@@ -336,15 +336,15 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 	/* can`t include adc1k mask */
 	ret = regmap_bulk_read(g_max77693_muic_info->max77693->regmap_muic,
                         MAX77693_MUIC_REG_STATUS1, &reg_data, 2);
-
+						
 	pr_err("%s: MUIC_REG_STATUS1(0x%02x)\n", __func__, reg_data);
 	mu_adc1k = reg_data & (0x1 << 7); /* STATUS1_ADC1K_MASK */
 	mu_adc = reg_data & 0x1F;
-
+	
 	ret = regmap_read(regmap, MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
 	pr_err("%s: CHG_REG_CHG_CNFG_00(0x%02x)\n", __func__, reg_data);
 	otg = reg_data & CHG_CNFG_00_OTG_MASK;
-
+	
 	/* if type detection by otg, do not otg check */
 	if (otg || (mu_adc == 0x00 && !mu_adc1k)) {
 		pr_err("%s: otg enabled(otg(0x%x), adc(0x%x))\n",
@@ -353,14 +353,14 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 		otg_detected = true;
 		goto chg_det_finish;
 	}
-
+	
 	/* dock charger */
 	/*state = max77693_get_dock_type(chg);
 	if (state == POWER_SUPPLY_TYPE_DOCK) {
 		pr_info("%s: dock charger detected\n", __func__);
 		goto chg_det_finish;
 	}*/
-
+	
 	chg_det_erred = false;	/* TEMP: set as true for logging */
 	do {
 		retry_det = false;
@@ -547,7 +547,6 @@ int max77693_get_charge_current(struct regmap *regmap, int *val)
 
 static enum power_supply_property max77693_charger_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
-	POWER_SUPPLY_PROP_TYPE,
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
 	POWER_SUPPLY_PROP_HEALTH,
 	POWER_SUPPLY_PROP_PRESENT,
@@ -568,9 +567,6 @@ static int max77693_charger_get_property(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
 		ret = max77693_get_charger_state(regmap, &val->intval);
-		break;
-	case POWER_SUPPLY_PROP_TYPE:
-		ret = max77693_get_cable_type(chg, regmap, &val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_TYPE:
 		ret = max77693_get_charge_type(regmap, &val->intval);

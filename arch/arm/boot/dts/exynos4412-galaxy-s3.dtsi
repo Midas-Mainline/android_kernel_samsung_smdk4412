@@ -83,6 +83,10 @@
 			vled-supply = <&ps_als_reg>;
 		};
 	};
+
+	silly {
+		compatible = "stupid,samsung-fake-battery";
+	};
 };
 
 &buck9_reg {

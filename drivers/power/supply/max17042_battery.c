@@ -64,7 +64,6 @@ struct max17042_chip {
 
 static enum power_supply_property max17042_battery_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
-	POWER_SUPPLY_PROP_TYPE,
 	POWER_SUPPLY_PROP_PRESENT,
 	POWER_SUPPLY_PROP_TECHNOLOGY,
 	POWER_SUPPLY_PROP_CYCLE_COUNT,
@@ -171,12 +170,6 @@ static int max17042_get_status(struct max17042_chip *chip, int *status)
 	return 0;
 }
 
-static int max17042_get_type(struct max17042_chip *chip, int *type)
-{
-	*type = POWER_SUPPLY_TYPE_BATTERY;
-	return 0;
-}
-
 static int max17042_get_battery_health(struct max17042_chip *chip, int *health)
 {
 	int temp, vavg, vbatt, ret;
@@ -249,11 +242,6 @@ static int max17042_get_property(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
 		ret = max17042_get_status(chip, &val->intval);
-		if (ret < 0)
-			return ret;
-		break;
-	case POWER_SUPPLY_PROP_TYPE:
-		ret = max17042_get_type(chip, &val->intval);
 		if (ret < 0)
 			return ret;
 		break;

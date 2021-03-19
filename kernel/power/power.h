@@ -79,7 +79,7 @@ static inline void hibernate_image_size_init(void) {}
 static struct kobj_attribute _name##_attr = {	\
 	.attr	= {				\
 		.name = __stringify(_name),	\
-		.mode = 0644,			\
+		.mode = 0666,			\
 	},					\
 	.show	= _name##_show,			\
 	.store	= _name##_store,		\

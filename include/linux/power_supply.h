@@ -180,7 +180,8 @@ enum power_supply_property {
 };
 
 enum power_supply_type {
-	POWER_SUPPLY_TYPE_BATTERY = 0,
+	POWER_SUPPLY_TYPE_UNKNOWN = 0,
+	POWER_SUPPLY_TYPE_BATTERY,
 	POWER_SUPPLY_TYPE_UPS,
 	POWER_SUPPLY_TYPE_MAINS,
 	POWER_SUPPLY_TYPE_USB,			/* Standard Downstream Port */
@@ -192,7 +193,6 @@ enum power_supply_type {
 	POWER_SUPPLY_TYPE_USB_PD_DRP,		/* PD Dual Role Port */
 	POWER_SUPPLY_TYPE_APPLE_BRICK_ID,	/* Apple Charging Method */
 	POWER_SUPPLY_TYPE_WIRELESS,		/* Wireless */
-	POWER_SUPPLY_TYPE_UNKNOWN,
 };
 
 enum power_supply_usb_type {

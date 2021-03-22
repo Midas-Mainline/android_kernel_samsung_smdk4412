@@ -165,28 +165,28 @@ static int max77693_get_charger_state(struct regmap *regmap, int *val)
 	case 0x0:
 	case 0x1:
 	case 0x2:
-		pr_debug("%s: POWER_SUPPLY_STATUS_CHARGING, data=%02x", __func__, data);
+		pr_err("%s: POWER_SUPPLY_STATUS_CHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_CHARGING;
 		break;
 	case 0x3:
 	case 0x4:
-		pr_debug("%s: POWER_SUPPLY_STATUS_FULL, data=%02x", __func__, data);
+		pr_err("%s: POWER_SUPPLY_STATUS_FULL, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_FULL;
 		break;
 	case 0x5:
 	case 0x6:
 	case 0x7:
-		pr_debug("%s: POWER_SUPPLY_STATUS_NOT_CHARGING, data=%02x", __func__, data);
+		pr_err("%s: POWER_SUPPLY_STATUS_NOT_CHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		break;
 	case 0x8:
 	case 0xA:
 	case 0xB:
-		pr_debug("%s: POWER_SUPPLY_STATUS_DISCHARGING, data=%02x", __func__, data);
+		pr_err("%s: POWER_SUPPLY_STATUS_DISCHARGING, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_DISCHARGING;
 		break;
 	default:
-		pr_debug("%s: POWER_SUPPLY_STATUS_UNKNOWN, data=%02x", __func__, data);
+		pr_err("%s: POWER_SUPPLY_STATUS_UNKNOWN, data=%02x", __func__, data);
 		*val = POWER_SUPPLY_STATUS_UNKNOWN;
 	}
 
@@ -207,25 +207,25 @@ static int max77693_get_charge_type(struct regmap *regmap, int *val)
 
 	switch (data) {
 	case 0x0:
-		pr_debug("%s: POWER_SUPPLY_CHARGE_TYPE_TRICKLE", __func__);
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_TRICKLE", __func__);
 		*val = POWER_SUPPLY_CHARGE_TYPE_TRICKLE;
 		break;
 	case 0x1:
 	case 0x2:
 	case 0x3:
 		*val = POWER_SUPPLY_CHARGE_TYPE_FAST;
-		pr_debug("%s: POWER_SUPPLY_CHARGE_TYPE_FAST", __func__);
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_FAST", __func__);
 		break;
 	case 0x4:
 	case 0x8:
 	case 0xA:
 	case 0xB:
 		*val = POWER_SUPPLY_CHARGE_TYPE_NONE;
-		pr_debug("%s: POWER_SUPPLY_CHARGE_TYPE_NONE", __func__);
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_NONE", __func__);
 		break;
 	default:
 		*val = POWER_SUPPLY_CHARGE_TYPE_UNKNOWN;
-		pr_debug("%s: POWER_SUPPLY_CHARGE_TYPE_UNKNOWN", __func__);
+		pr_err("%s: POWER_SUPPLY_CHARGE_TYPE_UNKNOWN", __func__);
 	}
 
 	return 0;
@@ -304,7 +304,7 @@ static int max77693_get_present(struct regmap *regmap, int *val)
 void max77693_reset_chgtyp(struct max77693_charger *chg)
 {
 	unsigned int reg_data;
-	pr_debug("%s\n", __func__);
+	pr_err("%s\n", __func__);
 
 	/* reset charger detection mode */
 	regmap_read(chg->max77693->regmap_muic,
@@ -326,7 +326,7 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 	bool retry_det, chg_det_erred;
 	bool otg_detected = false;
 	int retry_cnt = 0;
-	pr_debug("%s\n", __func__);
+	pr_err("%s\n", __func__);
 
 	mutex_lock(&chg->ops_lock);
 
@@ -336,17 +336,17 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 	ret = regmap_bulk_read(chg->max77693->regmap_muic,
                         MAX77693_MUIC_REG_STATUS1, &reg_data, 2);
 
-	pr_debug("%s: MUIC_REG_STATUS1(0x%02x)\n", __func__, reg_data);
+	pr_err("%s: MUIC_REG_STATUS1(0x%02x)\n", __func__, reg_data);
 	mu_adc1k = reg_data & (0x1 << 7); /* STATUS1_ADC1K_MASK */
 	mu_adc = reg_data & 0x1F;
 
 	ret = regmap_read(regmap, MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
-	pr_debug("%s: CHG_REG_CHG_CNFG_00(0x%02x)\n", __func__, reg_data);
+	pr_err("%s: CHG_REG_CHG_CNFG_00(0x%02x)\n", __func__, reg_data);
 	otg = reg_data & CHG_CNFG_00_OTG_MASK;
 
 	/* if type detection by otg, do not otg check */
 	if (otg || (mu_adc == 0x00 && !mu_adc1k)) {
-		pr_debug("%s: otg enabled(otg(0x%x), adc(0x%x))\n",
+		pr_err("%s: otg enabled(otg(0x%x), adc(0x%x))\n",
 					__func__, otg, mu_adc);
 		state = POWER_SUPPLY_TYPE_BATTERY;
 		otg_detected = true;
@@ -372,7 +372,7 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 		chgtyp = ((mu_st2 & MAX77693_CHGTYPE) >>
 					MAX77693_CHGTYPE_SHIFT);
 		if (chg_det_erred)
-			pr_debug("%s: CHGIN(0x%x). CHG(0x%x), MU_ST2(0x%x), "
+			pr_err("%s: CHGIN(0x%x). CHG(0x%x), MU_ST2(0x%x), "
 				"CDR(0x%x), VB(0x%x), CHGTYP(0x%x)\n", __func__,
 						chgin_dtls, chg_dtls, mu_st2,
 						chgdetrun, vbvolt, chgtyp);
@@ -381,11 +381,11 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 		if (((chgin_dtls != 0x0) && (vbvolt == 0x1)) ||
 			((chgin_dtls == 0x0) && (vbvolt == 0x0)) ||
 			(chg->reg_loop_deted == true)) {
-			pr_debug("%s: sync power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
+			pr_err("%s: sync power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
 						__func__, chgin_dtls, vbvolt,
 						chg->reg_loop_deted);
 		} else {
-			pr_debug("%s: async power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
+			pr_err("%s: async power: CHGIN(0x%x), VB(0x%x), REG(%d)\n",
 						__func__, chgin_dtls, vbvolt,
 						chg->reg_loop_deted);
 			chg_det_erred = true;
@@ -400,21 +400,21 @@ static int max77693_get_cable_type(struct max77693_charger *chg, struct regmap *
 
 		/* charger detect running */
 		if (chgdetrun == 0x1) {
-			pr_debug("%s: CDR(0x%x)\n", __func__, chgdetrun);
+			pr_err("%s: CDR(0x%x)\n", __func__, chgdetrun);
 			goto chg_det_err;
 		}
 
 		/* muic power and charger type */
 		if (((vbvolt == 0x1) && (chgtyp == 0x00)) ||
 			((vbvolt == 0x0) && (chgtyp != 0x00))) {
-			pr_debug("%s: VB(0x%x), CHGTYP(0x%x)\n",
+			pr_err("%s: VB(0x%x), CHGTYP(0x%x)\n",
 						__func__, vbvolt, chgtyp);
 
 			/* check D+/D- ovp */
 			dxovp = ((mu_st2 & MAX77693_DXOVP) >>
 						MAX77693_DXOVP_SHIFT);
 			if ((vbvolt == 0x1) && (dxovp)) {
-				pr_debug("%s: D+/D- ovp state\n", __func__);
+				pr_err("%s: D+/D- ovp state\n", __func__);
 				/* disable CHGIN protection FETs */
 				ret = regmap_read(regmap,
 					MAX77693_CHG_REG_CHG_CNFG_00, &reg_data);
@@ -483,7 +483,7 @@ chg_det_err:
 	}
 
 chg_det_finish:
-	pr_debug("%s: chg_det_erred(%d) cable type(%d)\n", __func__, chg_det_erred, state);
+	pr_err("%s: chg_det_erred(%d) cable type(%d)\n", __func__, chg_det_erred, state);
 
 	/* if cable is nothing,,, */
 	if (state == POWER_SUPPLY_TYPE_BATTERY) {

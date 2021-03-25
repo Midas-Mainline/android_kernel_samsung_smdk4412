@@ -17,6 +17,7 @@ struct gpiohack {
 	struct gpio_desc *cp_on;
 	struct gpio_desc *cp_reset;
 	struct gpio_desc *phone_active;
+	struct gpio_desc *ap_dump;
 	struct gpio_desc *cp_dump;
 	struct gpio_desc *pda_active;
 	struct gpio_desc *link_active;
@@ -34,6 +35,7 @@ struct gpiohack {
 
 static void reset_modem_control(struct gpiohack *dev) {
 	gpiod_direction_output(dev->pda_active, 0);
+	gpiod_direction_output(dev->ap_dump, 0);
 	gpiod_direction_output(dev->cp_dump, 0);
 	gpiod_direction_output(dev->link_active, 0);
 	gpiod_direction_output(dev->link_slavewake, 0);
@@ -300,6 +302,12 @@ static int gpiohack_probe(struct platform_device *pdev) {
 		dev_err(dev->dev, "ernk phone_active: %ld\n",
 			PTR_ERR(dev->phone_active));
 		return PTR_ERR(dev->phone_active);
+	}
+
+	dev->ap_dump = devm_gpiod_get(dev->dev, "ap-dump", GPIOD_OUT_LOW);
+	if (IS_ERR(dev->ap_dump)) {
+		dev_err(dev->dev, "ernk ap_dump: %ld\n", PTR_ERR(dev->ap_dump));
+		return PTR_ERR(dev->ap_dump);
 	}
 
 	dev->cp_dump = devm_gpiod_get(dev->dev, "cp-dump", GPIOD_IN);

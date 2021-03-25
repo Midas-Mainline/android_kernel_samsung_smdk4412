@@ -27,6 +27,8 @@ struct gpiohack {
 	struct clk *clk;
 
 	int irq_phone_active;
+	int irq_hostwake;
+
 	int state;
 };
 
@@ -112,6 +114,18 @@ static irqreturn_t phone_active_irq_handler(int irq, void *_dev)
 		irq_set_irq_type(dev->irq_phone_active, IRQ_TYPE_LEVEL_HIGH);
 
 	enable_irq(dev->irq_phone_active);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t hostwake_irq_handler(int irq, void *_dev)
+{
+	struct gpiohack *dev = _dev;
+	int hwk;
+
+	hwk = gpiod_get_value(dev->link_hostwake);
+
+	dev_info(dev->dev, "hostwake: %d\n", hwk);
 
 	return IRQ_HANDLED;
 }
@@ -273,6 +287,12 @@ static int gpiohack_probe(struct platform_device *pdev) {
 		return PTR_ERR(dev->cp_dump);
 	}
 
+	dev->link_hostwake = devm_gpiod_get(dev->dev, "link-hostwake", GPIOD_IN);
+	if (IS_ERR(dev->link_hostwake)) {
+		dev_err(dev->dev, "ernk link_hostwake: %ld\n", PTR_ERR(dev->link_hostwake));
+		return PTR_ERR(dev->link_hostwake);
+	}
+
 	dev->suspend_req = devm_gpiod_get(dev->dev, "suspend-req", GPIOD_OUT_LOW);
 	if (IS_ERR(dev->suspend_req)) {
 		dev_err(dev->dev, "ernk suspend_req: %ld\n", PTR_ERR(dev->suspend_req));
@@ -297,10 +317,19 @@ static int gpiohack_probe(struct platform_device *pdev) {
 
 	dev->irq_phone_active = gpiod_to_irq(dev->phone_active);
 	ret = devm_request_irq(dev->dev, dev->irq_phone_active, phone_active_irq_handler,
-			IRQF_NO_SUSPEND | IRQF_TRIGGER_HIGH,
-			"phone_active", dev);
+			       IRQF_NO_SUSPEND | IRQF_TRIGGER_HIGH,
+			       "phone_active", dev);
 	if (ret) {
 		dev_err(dev->dev, "Failed to request phone_active irq: %d\n", ret);
+		return ret;
+	}
+
+	dev->irq_hostwake = gpiod_to_irq(dev->link_hostwake);
+	ret = devm_request_irq(dev->dev, dev->irq_hostwake, hostwake_irq_handler,
+			       IRQF_NO_SUSPEND | IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+			       "hostwake", dev);
+	if (ret) {
+		dev_err(dev->dev, "Failed to request hostwake irq: %d\n", ret);
 		return ret;
 	}
 

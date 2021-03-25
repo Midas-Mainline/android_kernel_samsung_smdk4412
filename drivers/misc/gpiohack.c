@@ -75,13 +75,14 @@ static void gpiohack_modem_off(struct gpiohack *dev) {
 	reset_modem_control(dev);
 }
 
-static ssize_t gpiohack_hostwake_show(struct device *_dev, struct device_attribute *attr,
-		char *buf)
+static ssize_t gpiohack_hostwake_show(struct device *_dev,
+				      struct device_attribute *attr, char *buf)
 {
 	struct platform_device *pdev = to_platform_device(_dev);
 	struct gpiohack *dev = platform_get_drvdata(pdev);
 
-	return scnprintf(buf, PAGE_SIZE, "%d\n", gpiod_get_value(dev->link_hostwake));
+	return scnprintf(buf, PAGE_SIZE, "%d\n",
+			 gpiod_get_value(dev->link_hostwake));
 }
 
 static irqreturn_t phone_active_irq_handler(int irq, void *_dev)
@@ -95,11 +96,13 @@ static irqreturn_t phone_active_irq_handler(int irq, void *_dev)
 	cpr = gpiod_get_value(dev->cp_reset);
 	cpd = gpiod_get_value(dev->cp_dump);
 
-	dev_info(dev->dev, "phone_active: cp_reset=%d, phone_active=%d, cp_dump=%d\n",
-			cpr, pa, cpd);
+	dev_info(dev->dev,
+		 "phone_active: cp_reset=%d, phone_active=%d, cp_dump=%d\n",
+		 cpr, pa, cpd);
 
 	if (cpr && pa)
 		dev_info(dev->dev, "BOOTING\n");
+
 	else if (cpr && !pa) {
 		if (cpd)
 			dev_info(dev->dev, "CRASH EXIT\n");
@@ -130,7 +133,8 @@ static irqreturn_t hostwake_irq_handler(int irq, void *_dev)
 	return IRQ_HANDLED;
 }
 
-static ssize_t gpiohack_phone_active_show(struct device *_dev, struct device_attribute *attr,
+static ssize_t gpiohack_phone_active_show(struct device *_dev,
+					  struct device_attribute *attr,
 		char *buf)
 {
 	struct platform_device *pdev = to_platform_device(_dev);
@@ -141,20 +145,28 @@ static ssize_t gpiohack_phone_active_show(struct device *_dev, struct device_att
 	cpd = gpiod_get_value(dev->cp_dump);
 
 	if (cpr && pa) {
-		return scnprintf(buf, PAGE_SIZE, "booting pa=%d cpr=%d cpd=%d\n", pa, cpr, cpd);
+		return scnprintf(buf, PAGE_SIZE,
+				 "booting pa=%d cpr=%d cpd=%d\n", pa, cpr, cpd);
 	} else if (cpr && !pa) {
 		if (cpd)
-			return scnprintf(buf, PAGE_SIZE, "crash exit pa=%d cpr=%d cpd=%d\n", pa, cpr, cpd);
+			return scnprintf(buf, PAGE_SIZE,
+					 "crash exit pa=%d cpr=%d cpd=%d\n",
+					 pa, cpr, cpd);
 		else
-			return scnprintf(buf, PAGE_SIZE, "crash reset pa=%d cpr=%d cpd=%d\n", pa, cpr, cpd);
+			return scnprintf(buf, PAGE_SIZE,
+					 "crash reset pa=%d cpr=%d cpd=%d\n",
+					 pa, cpr, cpd);
 	} else {
-		return scnprintf(buf, PAGE_SIZE, "offline pa=%d cpr=%d cpd=%d\n", pa, cpr, cpd);
+		return scnprintf(buf, PAGE_SIZE,
+				 "offline pa=%d cpr=%d cpd=%d\n",
+				 pa, cpr, cpd);
 	}
 }
 
 
-static ssize_t gpiohack_link_active_store(struct device *_dev, struct device_attribute *attr,
-		const char *buf, size_t len)
+static ssize_t gpiohack_link_active_store(struct device *_dev,
+					  struct device_attribute *attr,
+					  const char *buf, size_t len)
 {
 	struct platform_device *pdev = to_platform_device(_dev);
 	struct gpiohack *dev = platform_get_drvdata(pdev);
@@ -169,8 +181,9 @@ static ssize_t gpiohack_link_active_store(struct device *_dev, struct device_att
 	return len;
 }
 
-static ssize_t gpiohack_slavewake_store(struct device *_dev, struct device_attribute *attr,
-		const char *buf, size_t len)
+static ssize_t gpiohack_slavewake_store(struct device *_dev,
+					struct device_attribute *attr,
+					const char *buf, size_t len)
 {
 	struct platform_device *pdev = to_platform_device(_dev);
 	struct gpiohack *dev = platform_get_drvdata(pdev);
@@ -185,8 +198,9 @@ static ssize_t gpiohack_slavewake_store(struct device *_dev, struct device_attri
 	return len;
 }
 
-static ssize_t gpiohack_sysfs_store(struct device *dev, struct device_attribute *attr,
-		const char *buf, size_t len)
+static ssize_t gpiohack_sysfs_store(struct device *dev,
+				    struct device_attribute *attr,
+				    const char *buf, size_t len)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct gpiohack *hack = platform_get_drvdata(pdev);
@@ -209,7 +223,8 @@ static ssize_t gpiohack_sysfs_store(struct device *dev, struct device_attribute 
 	return len;
 }
 
-static ssize_t gpiohack_sysfs_show(struct device *dev, struct device_attribute *attr,
+static ssize_t gpiohack_sysfs_show(struct device *dev,
+				   struct device_attribute *attr,
 		char *buf)
 {
 	struct platform_device *pdev = to_platform_device(dev);
@@ -218,8 +233,9 @@ static ssize_t gpiohack_sysfs_show(struct device *dev, struct device_attribute *
 	return scnprintf(buf, PAGE_SIZE, "%s\n", hack->state ? "on" : "off");
 }
 
-static ssize_t gpiohack_pda_active_store(struct device *_dev, struct device_attribute *attr,
-		const char *buf, size_t len)
+static ssize_t gpiohack_pda_active_store(struct device *_dev,
+					 struct device_attribute *attr,
+					 const char *buf, size_t len)
 {
 	struct platform_device *pdev = to_platform_device(_dev);
 	struct gpiohack *dev = platform_get_drvdata(pdev);
@@ -254,7 +270,8 @@ static int gpiohack_probe(struct platform_device *pdev) {
 
 	dev->reset_req = devm_gpiod_get(dev->dev, "reset-req", GPIOD_OUT_LOW);
 	if (IS_ERR(dev->reset_req)) {
-		dev_err(dev->dev, "ernk reset-req: %ld\n", PTR_ERR(dev->reset_req));
+		dev_err(dev->dev, "ernk reset-req: %ld\n",
+			PTR_ERR(dev->reset_req));
 		return PTR_ERR(dev->reset_req);
 	}
 
@@ -265,19 +282,23 @@ static int gpiohack_probe(struct platform_device *pdev) {
 	}
 	dev->cp_reset = devm_gpiod_get(dev->dev, "cp-reset", GPIOD_OUT_LOW);
 	if (IS_ERR(dev->cp_reset)) {
-		dev_err(dev->dev, "ernk cp-reset: %ld\n", PTR_ERR(dev->cp_reset));
+		dev_err(dev->dev, "ernk cp-reset: %ld\n",
+			PTR_ERR(dev->cp_reset));
 		return PTR_ERR(dev->cp_reset);
 	}
 
-	dev->link_active = devm_gpiod_get(dev->dev, "link-active", GPIOD_OUT_LOW);
+	dev->link_active = devm_gpiod_get(dev->dev, "link-active",
+					  GPIOD_OUT_LOW);
 	if (IS_ERR(dev->link_active)) {
-		dev_err(dev->dev, "ernk link_active: %ld\n", PTR_ERR(dev->link_active));
+		dev_err(dev->dev, "ernk link_active: %ld\n",
+			PTR_ERR(dev->link_active));
 		return PTR_ERR(dev->link_active);
 	}
 
 	dev->phone_active = devm_gpiod_get(dev->dev, "phone-active", GPIOD_IN);
 	if (IS_ERR(dev->phone_active)) {
-		dev_err(dev->dev, "ernk phone_active: %ld\n", PTR_ERR(dev->phone_active));
+		dev_err(dev->dev, "ernk phone_active: %ld\n",
+			PTR_ERR(dev->phone_active));
 		return PTR_ERR(dev->phone_active);
 	}
 
@@ -287,21 +308,27 @@ static int gpiohack_probe(struct platform_device *pdev) {
 		return PTR_ERR(dev->cp_dump);
 	}
 
-	dev->link_hostwake = devm_gpiod_get(dev->dev, "link-hostwake", GPIOD_IN);
+	dev->link_hostwake = devm_gpiod_get(dev->dev, "link-hostwake",
+					    GPIOD_IN);
 	if (IS_ERR(dev->link_hostwake)) {
-		dev_err(dev->dev, "ernk link_hostwake: %ld\n", PTR_ERR(dev->link_hostwake));
+		dev_err(dev->dev, "ernk link_hostwake: %ld\n",
+			PTR_ERR(dev->link_hostwake));
 		return PTR_ERR(dev->link_hostwake);
 	}
 
-	dev->suspend_req = devm_gpiod_get(dev->dev, "suspend-req", GPIOD_OUT_LOW);
+	dev->suspend_req = devm_gpiod_get(dev->dev, "suspend-req",
+					  GPIOD_OUT_LOW);
 	if (IS_ERR(dev->suspend_req)) {
-		dev_err(dev->dev, "ernk suspend_req: %ld\n", PTR_ERR(dev->suspend_req));
+		dev_err(dev->dev, "ernk suspend_req: %ld\n",
+			PTR_ERR(dev->suspend_req));
 		return PTR_ERR(dev->suspend_req);
 	}
 
-	dev->link_slavewake = devm_gpiod_get(dev->dev, "link-slavewake", GPIOD_OUT_LOW);
+	dev->link_slavewake = devm_gpiod_get(dev->dev, "link-slavewake",
+					     GPIOD_OUT_LOW);
 	if (IS_ERR(dev->link_slavewake)) {
-		dev_err(dev->dev, "ernk link_slavewake: %ld\n", PTR_ERR(dev->link_slavewake));
+		dev_err(dev->dev, "ernk link_slavewake: %ld\n",
+			PTR_ERR(dev->link_slavewake));
 		return PTR_ERR(dev->link_slavewake);
 	}
 
@@ -309,24 +336,29 @@ static int gpiohack_probe(struct platform_device *pdev) {
 
 	dev->pda_active = devm_gpiod_get(dev->dev, "pda-active", GPIOD_OUT_LOW);
 	if (IS_ERR(dev->pda_active)) {
-		dev_err(dev->dev, "ernk pda-active: %ld\n", PTR_ERR(dev->pda_active));
+		dev_err(dev->dev, "ernk pda-active: %ld\n",
+			PTR_ERR(dev->pda_active));
 		return PTR_ERR(dev->pda_active);
 	}
 
 	dev_err(dev->dev, "Loaded enable gpio\n");
 
 	dev->irq_phone_active = gpiod_to_irq(dev->phone_active);
-	ret = devm_request_irq(dev->dev, dev->irq_phone_active, phone_active_irq_handler,
+	ret = devm_request_irq(dev->dev, dev->irq_phone_active,
+			       phone_active_irq_handler,
 			       IRQF_NO_SUSPEND | IRQF_TRIGGER_HIGH,
 			       "phone_active", dev);
 	if (ret) {
-		dev_err(dev->dev, "Failed to request phone_active irq: %d\n", ret);
+		dev_err(dev->dev, "Failed to request phone_active irq: %d\n",
+			ret);
 		return ret;
 	}
 
 	dev->irq_hostwake = gpiod_to_irq(dev->link_hostwake);
-	ret = devm_request_irq(dev->dev, dev->irq_hostwake, hostwake_irq_handler,
-			       IRQF_NO_SUSPEND | IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+	ret = devm_request_irq(dev->dev, dev->irq_hostwake,
+			       hostwake_irq_handler,
+			       IRQF_NO_SUSPEND | IRQF_TRIGGER_FALLING |
+			       IRQF_TRIGGER_RISING,
 			       "hostwake", dev);
 	if (ret) {
 		dev_err(dev->dev, "Failed to request hostwake irq: %d\n", ret);
@@ -350,6 +382,7 @@ static int gpiohack_probe(struct platform_device *pdev) {
 	device_create_file(dev->dev, &dev_attr_pda_active);
 	dev->state = 0;
 	platform_set_drvdata(pdev, dev);
+
 	return 0;
 }
 

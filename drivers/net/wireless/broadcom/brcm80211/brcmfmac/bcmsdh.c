@@ -1182,7 +1182,7 @@ static void brcmf_sdio_register_fn(struct work_struct *work)
 
 void brcmf_sdio_register(void)
 {
-       schedule_delayed_work(&brcmf_sdio_register_delayedwork, msecs_to_jiffies(3000));
+       schedule_delayed_work(&brcmf_sdio_register_delayedwork, msecs_to_jiffies(10000));
 }
 
 void _brcmf_sdio_register(void)

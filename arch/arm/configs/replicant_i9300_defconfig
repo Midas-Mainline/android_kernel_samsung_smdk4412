@@ -21,7 +21,14 @@ CONFIG_CGROUP_CPUACCT=y
 CONFIG_CGROUP_BPF=y
 CONFIG_NAMESPACES=y
 CONFIG_USER_NS=y
-# CONFIG_BLK_DEV_INITRD is not set
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_INITRAMFS_SOURCE=""
+#CONFIG_RD_GZIP=y
+# CONFIG_RD_BZIP2 is not set
+CONFIG_RD_LZMA=y
+# CONFIG_RD_XZ is not set
+# CONFIG_RD_LZO is not set
+# CONFIG_RD_LZ4 is not set
 # CONFIG_FHANDLE is not set
 CONFIG_KALLSYMS_ALL=y
 CONFIG_BPF_SYSCALL=y
@@ -45,7 +52,7 @@ CONFIG_ZBOOT_ROM_BSS=0x0
 CONFIG_ARM_APPENDED_DTB=y
 CONFIG_ARM_ATAG_DTB_COMPAT=y
 CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y
-CONFIG_CMDLINE="console=tty0 noinitrd rootfstype=ext4 root=/dev/mmcblk1p1 init=/init loglevel=8 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 no_console_suspend"
+CONFIG_CMDLINE="console=tty0 loglevel=8 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 no_console_suspend"
 CONFIG_CMDLINE_FORCE=y
 CONFIG_CPU_FREQ=y
 CONFIG_CPU_FREQ_STAT=y

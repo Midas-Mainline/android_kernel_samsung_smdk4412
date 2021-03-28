@@ -369,7 +369,7 @@ MODULE_DEVICE_TABLE(of, ids);
 static struct platform_driver modemctl_driver = {
 	.driver = {
 		.name = "gpiohack",
-		.of_match_table = of_match_ptr(modemctl_of_match),
+		.of_match_table = of_match_ptr(ids),
 	},
 	.probe = gpiohack_probe,
 	.remove = gpiohack_remove,

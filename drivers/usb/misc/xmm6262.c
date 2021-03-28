@@ -118,7 +118,7 @@ static int xmm6262_boot_open(struct inode *inode, struct file *file)
 {
 	struct xmm6262 *dev;
 	struct usb_interface *intf;
-	int subminor, ret = 0;
+	int subminor;
 
 	subminor = iminor(inode);
 
@@ -154,7 +154,7 @@ static ssize_t xmm6262_boot_read(struct file *file, char *buf, size_t count,
 	struct sk_buff *skb = NULL;
 	int to_read = count;
 	int read = 0;
-	int ret, copy_len;
+	int ret;
 
 	if (file->f_flags & O_NONBLOCK) {
 		ret = mutex_trylock(&dev->io_mutex);
@@ -395,7 +395,7 @@ static void xmm6262_disconnect(struct usb_interface *intf)
 {
 	struct xmm6262 *dev = usb_get_intfdata(intf);
 	struct usb_driver *usbdrv = to_usb_driver(intf->dev.driver);
-	
+
 	mutex_lock(&dev->rx_mutex);
 	/* time to stop! */
 	dev->intf = NULL;
@@ -415,7 +415,7 @@ static struct usb_device_id xmm6262_idtable[] = {
 };
 
 static struct usb_driver xmm6262_boot_driver = {
-	.name = "xmm6262",
+	.name = "xmm6262_boot",
 	.probe = xmm6262_probe,
 	.disconnect = xmm6262_disconnect,
 	//.suspend = xmm6262_suspend,

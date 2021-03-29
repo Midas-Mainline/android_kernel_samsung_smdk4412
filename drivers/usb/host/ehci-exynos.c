@@ -186,24 +186,6 @@ err:
 static DEVICE_ATTR(ehci_power, 0664, show_ehci_power, store_ehci_power);
 #endif
 
-static void exynos_setup_vbus_gpio(struct device *dev)
-{
-	int err;
-	int gpio;
-
-	if (!dev->of_node)
-		return;
-
-	gpio = of_get_named_gpio(dev->of_node, "samsung,vbus-gpio", 0);
-	if (!gpio_is_valid(gpio))
-		return;
-
-	err = devm_gpio_request_one(dev, gpio, GPIOF_OUT_INIT_HIGH,
-				    "ehci_vbus_gpio");
-	if (err)
-		dev_err(dev, "can't request ehci vbus gpio %d", gpio);
-}
-
 static int exynos_ehci_probe(struct platform_device *pdev)
 {
 	struct exynos_ehci_hcd *exynos_ehci;
@@ -221,8 +203,6 @@ static int exynos_ehci_probe(struct platform_device *pdev)
 	err = dma_coerce_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
 	if (err)
 		return err;
-
-	exynos_setup_vbus_gpio(&pdev->dev);
 
 	hcd = usb_create_hcd(&exynos_ehci_hc_driver,
 			     &pdev->dev, dev_name(&pdev->dev));

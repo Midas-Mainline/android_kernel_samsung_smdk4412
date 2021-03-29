@@ -449,7 +449,6 @@
 };
 
 &ehci {
-	samsung,vbus-gpio = <&gpf0 7 0>;
 	status = "okay";
 
 	port@1 {

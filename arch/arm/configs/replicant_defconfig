@@ -56,7 +56,7 @@ CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE=y
 CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE_NAMES="exynos4412-i9300"
 CONFIG_ARM_ATAG_DTB_COMPAT=y
 CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y
-CONFIG_CMDLINE="console=tty0 loglevel=8 net.ifnames=0 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 exynosdrm.pixel_order=1 firmware_class.path=/lib/firmware"
+CONFIG_CMDLINE="console=tty0 loglevel=8 net.ifnames=0 androidboot.hardware=smdk4x12 androidboot.selinux=permissive enforcing=0 firmware_class.path=/lib/firmware"
 CONFIG_CMDLINE_FORCE=y
 CONFIG_CPU_FREQ=y
 CONFIG_CPU_FREQ_STAT=y

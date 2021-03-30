@@ -647,10 +647,110 @@ void max77693_otg_control(struct max77693_muic_info *info, int enable)
 				__func__, int_mask, cdetctrl1, chg_cnfg_00);
 }
 
+#if 0
+
+static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
+{
+	int ret;
+	int gpio_val;
+	u8 cntl1_val, cntl1_msk;
+	int val;
+	pr_err("%s path:%d\n", __func__, path);
+	/*if (mdata->set_safeout) {
+		ret = mdata->set_safeout(path);
+		if (ret) {
+			dev_err(info->dev, "%s: fail to set safout!\n",
+				__func__);
+			return ret;
+		}
+	}*/
+	switch (path) {
+	case AP_USB_MODE:
+		dev_info(info->dev, "%s: AP_USB_MODE\n", __func__);
+		gpio_val = 0;
+		val = MAX77693_MUIC_CTRL1_BIN_1_001;
+		cntl1_val = (val << COMN1SW_SHIFT) | (val << COMP2SW_SHIFT);
+		cntl1_msk = COMN1SW_MASK | COMP2SW_MASK;
+		break;
+#if 0
+	case CP_USB_MODE:
+		dev_info(info->dev, "%s: CP_USB_MODE\n", __func__);
+		gpio_val = 1;
+		if (info->max77693->pmic_rev >= MAX77693_REV_PASS2)
+			val = MAX77693_MUIC_CTRL1_BIN_4_100;
+		else
+			val = MAX77693_MUIC_CTRL1_BIN_3_011;
+		cntl1_val = (val << COMN1SW_SHIFT) | (val << COMP2SW_SHIFT);
+		cntl1_msk = COMN1SW_MASK | COMP2SW_MASK;
+		break;
+	case AUDIO_MODE:
+		dev_info(info->dev, "%s: AUDIO_MODE\n", __func__);
+		gpio_val = 0;
+		/* SL1, SR2 */
+		cntl1_val = (MAX77693_MUIC_CTRL1_BIN_2_010 << COMN1SW_SHIFT)
+			| (MAX77693_MUIC_CTRL1_BIN_2_010 << COMP2SW_SHIFT) |
+			(0 << MICEN_SHIFT);
+		cntl1_msk = COMN1SW_MASK | COMP2SW_MASK | MICEN_MASK;
+		break;
+	case OPEN_USB_MODE:
+		dev_info(info->dev, "%s: OPEN_USB_MODE\n", __func__);
+		gpio_val = 0;
+		val = MAX77693_MUIC_CTRL1_BIN_0_000;
+		cntl1_val = (val << COMN1SW_SHIFT) | (val << COMP2SW_SHIFT);
+		cntl1_msk = COMN1SW_MASK | COMP2SW_MASK;
+		break;
+#endif
+	default:
+		dev_warn(info->dev, "%s: invalid path(%d)\n", __func__, path);
+		return -EINVAL;
+	}
+
+#if 0
+	if (info->max77693->pmic_rev < MAX77693_REV_PASS2) {
+		pr_err("%s: set gpio_usb_sel: %d\n", __func__, gpio_val);
+		if (gpio_is_valid(info->muic_data->gpio_usb_sel))
+			gpio_direction_output(mdata->gpio_usb_sel, gpio_val);
+	}
+#endif
+
+	pr_err("%s: Set manual path\n", __func__);
+#if 0
+	if (info->cable_type != CABLE_TYPE_CARDOCK_MUIC
+		&& info->cable_type != CABLE_TYPE_DESKDOCK_MUIC)
+#endif
+
+	/*max77693_update_reg(client, MAX77693_MUIC_REG_CTRL1, cntl1_val,
+				cntl1_msk);*/
+
+	regmap_write(info->max77693->regmap_muic,
+				MAX77693_MUIC_REG_CTRL2,
+				CTRL2_CPEn1_LOWPWD0,
+				CTRL2_CPEn_MASK | CTRL2_LOWPWD_MASK);
+
+	cntl1_val = MAX77693_MUIC_CTRL1_BIN_0_000;
+	regmap_read(info->max77693->regmap_muic, MAX77693_MUIC_REG_CTRL1, &cntl1_val);
+	pr_err("%s: CNTL1(0x%02x)\n", __func__, cntl1_val);
+
+	cntl1_val = MAX77693_MUIC_CTRL1_BIN_0_000;
+	regmap_read(info->max77693->regmap_muic, MAX77693_MUIC_REG_CTRL2, &cntl1_val);
+	pr_err("%s: CNTL2(0x%02x)\n", __func__, cntl1_val);
+
+	//sysfs_notify(&switch_dev->kobj, NULL, "usb_sel");
+	return 0;
+}
+
+#endif
+
 void otg_control(int enable)
 {
 	if (gInfo)
 		max77693_otg_control(gInfo, enable);
+}
+
+void set_usb_path(/*u8 val, */int attached)
+{
+	if (gInfo)
+		max77693_muic_set_path(gInfo, MAX77693_CONTROL1_SW_USB /*val*/, attached);
 }
 
 static int max77693_muic_adc_ground_handler(struct max77693_muic_info *info)

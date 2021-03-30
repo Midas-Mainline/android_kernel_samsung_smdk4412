@@ -19,6 +19,8 @@ struct gpiohack {
 	int state;
 };
 
+extern void otg_control(int enable);
+
 static ssize_t gpiohack_sysfs_store(struct device *dev,
 				    struct device_attribute *attr,
 				    const char *buf, size_t len)
@@ -39,11 +41,15 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		if (hack->otg_en)
 			gpiod_direction_output(hack->otg_en, 0);
+
+		otg_control(0);
 	} else if (new_state && !hack->state) {
 		/* currently off, power on */
 		hack->state = 1;
 		if (hack->otg_en)
 			gpiod_direction_output(hack->otg_en, 1);
+
+		otg_control(1);
 	}
 
 	return len;

@@ -489,10 +489,10 @@ static int midas_lineout_switch(struct snd_soc_dapm_widget *w,
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		msleep(150);
-		max77693_muic_set_audio_switch(1);
+		//max77693_muic_set_audio_switch(1);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
-		max77693_muic_set_audio_switch(0);
+		//max77693_muic_set_audio_switch(0);
 		break;
 	}
 #endif

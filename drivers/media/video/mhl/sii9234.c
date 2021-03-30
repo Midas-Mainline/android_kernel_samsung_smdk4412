@@ -288,6 +288,8 @@ static CLASS_ATTR(swing, 0666,
 #if defined(CONFIG_SAMSUNG_USE_11PIN_CONNECTOR) && !defined(CONFIG_MACH_P4NOTE)
 static int is_mhl_cable_connected(void)
 {
+	return 0;
+/*
 #	ifdef CONFIG_SAMSUNG_SMARTDOCK
 		if (max77693_muic_get_status1_adc_value() == ADC_SMARTDOCK)
 			return 1;
@@ -295,7 +297,7 @@ static int is_mhl_cable_connected(void)
 			return max77693_muic_get_status1_adc1k_value();
 #	else
 		return max77693_muic_get_status1_adc1k_value();
-#	endif
+#	endif*/
 }
 #endif
 #ifdef CONFIG_SAMSUNG_WORKAROUND_HPD_GLANCE

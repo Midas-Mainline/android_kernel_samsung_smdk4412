@@ -2029,6 +2029,9 @@ static struct platform_device s3c_device_i2c12 = {
 #ifdef CONFIG_USB_HOST_NOTIFY
 static void otg_accessory_power(int enable)
 {
+	pr_err("%s: enable=%d\n", __func__, enable);
+	return;
+#if 0
 	u8 on = (u8)!!enable;
 	int err;
 
@@ -2041,14 +2044,17 @@ static void otg_accessory_power(int enable)
 	gpio_direction_output(GPIO_OTG_EN, on);
 	gpio_free(GPIO_OTG_EN);
 	pr_info("%s: otg accessory power = %d\n", __func__, on);
+#endif
 }
 
 static void otg_accessory_powered_booster(int enable)
 {
+	pr_err("%s: enable=%d\n", __func__, enable);
+	return;
 	u8 on = (u8)!!enable;
 
 	/* max77693 powered otg power control */
-	powered_otg_control(enable);
+	//powered_otg_control(enable);
 	pr_info("%s: otg accessory power = %d\n", __func__, on);
 }
 

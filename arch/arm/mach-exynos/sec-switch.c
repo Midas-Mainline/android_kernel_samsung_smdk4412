@@ -405,9 +405,12 @@ bool max77693_muic_is_mhl_attached(void)
 {
 	int val;
 #ifdef CONFIG_SAMSUNG_USE_11PIN_CONNECTOR
+#if 0
 	val = max77693_muic_get_status1_adc1k_value();
 	pr_info("%s(1): %d\n", __func__, val);
 	return val;
+#endif
+	return 0;
 #else
 	const int err = -1;
 	int ret;

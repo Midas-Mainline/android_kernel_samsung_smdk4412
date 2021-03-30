@@ -1629,7 +1629,7 @@ charge_ok:
 			wake_lock(&info->charge_wake_lock);
 		/* default dock prop is AC */
 		info->online_prop = ONLINE_PROP_AC;
-		muic_cb_typ = max77693_muic_get_charging_type();
+		muic_cb_typ = CABLE_TYPE_AUDIODOCK_MUIC;//max77693_muic_get_charging_type();
 		switch (muic_cb_typ) {
 		case CABLE_TYPE_AUDIODOCK_MUIC:
 			pr_info("%s: audio dock, %d\n",

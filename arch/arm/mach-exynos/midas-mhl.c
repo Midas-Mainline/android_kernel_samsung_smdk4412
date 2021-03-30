@@ -159,7 +159,9 @@ static int sii9234_get_vbus_status(void)
 
 static void sii9234_otg_control(bool onoff)
 {
-	otg_control(onoff);
+	pr_err("%s: onoff=%d\n", __func__, onoff);
+	return;
+	//otg_control(onoff);
 
 	gpio_request(GPIO_OTG_EN, "USB_OTG_EN");
 	gpio_direction_output(GPIO_OTG_EN, onoff);

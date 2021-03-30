@@ -628,7 +628,7 @@ static int max77693_get_dock_type(struct max77693_charger_data *chg_data)
 	u8 mu_st2, vbvolt = 0;
 	pr_debug("%s\n", __func__);
 
-	muic_cb_typ = max77693_muic_get_charging_type();
+	muic_cb_typ = CABLE_TYPE_CARDOCK_MUIC; //max77693_muic_get_charging_type();
 	pr_debug("%s: muic cable type(%d)\n", __func__, muic_cb_typ);
 
 	/* dock detect from muic */

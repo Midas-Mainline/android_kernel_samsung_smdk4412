@@ -1197,6 +1197,11 @@ static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
 	return 0;
 }
 
+int muic_set_usb_path(int path)
+{
+	return max77693_muic_set_usb_path(gInfo, path);
+}
+
 int max77693_muic_get_charging_type(void)
 {
 	return gInfo->cable_type;

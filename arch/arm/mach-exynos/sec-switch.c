@@ -405,10 +405,13 @@ module_param_call(enable_otg_control, set_enable_otg_control, param_get_int, &ot
 
 int usbhost_control_switch = 0;
 
+extern int muic_set_usb_path(int path);
 static int set_enable_usbhost_control(const char *val, struct kernel_param *kp)
 {
         if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
 		usbhost_control_switch = 1;
+		muic_set_usb_path(AP_USB_MODE);
+		msleep(40);
 		max77693_muic_usb_cb(USB_OTGHOST_ATTACHED);
 	} else {
 		max77693_muic_usb_cb(USB_OTGHOST_DETACHED);

@@ -91,7 +91,7 @@
 	};
 
 	xmm6262 {
-        compatible = "gpio,hack";
+        compatible = "samsung,modem-ctl";
         cp-on-gpios = <&gpl2 5 GPIO_ACTIVE_HIGH>;
         cp-reset-gpios = <&gpx3 2 GPIO_ACTIVE_HIGH>;
         cp-dump-gpios = <&gpx1 2 GPIO_ACTIVE_HIGH>;

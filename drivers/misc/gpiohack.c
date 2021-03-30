@@ -316,16 +316,16 @@ static int gpiohack_probe(struct platform_device *pdev) {
 	dev_err(dev->dev, "Loaded enable gpio\n");
 
 	dev->irq_phone_active = gpiod_to_irq(dev->phone_active);
-	ret = request_irq(dev->irq_phone_active, phone_active_irq_handler,
+	ret = devm_request_irq(dev->dev, dev->irq_phone_active, phone_active_irq_handler,
 			IRQF_NO_SUSPEND | IRQF_TRIGGER_HIGH,
 			"phone_active", dev);
 	if (ret) {
-		dev_err(dev->dev, "Failed to request irq: %d\n", ret);
+		dev_err(dev->dev, "Failed to request phone_active irq: %d\n", ret);
 		return ret;
 	}
 
 	dev->irq_hostwake = gpiod_to_irq(dev->link_hostwake);
-	ret = request_irq(dev->irq_hostwake, hostwake_irq_handler,
+	ret = devm_request_irq(dev->dev, dev->irq_hostwake, hostwake_irq_handler,
 			IRQF_NO_SUSPEND | IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
 			"hostwake", dev);
 	if (ret) {
@@ -359,17 +359,17 @@ static int gpiohack_remove(struct platform_device *pdev) {
 	return 0;
 }
 
-static const struct of_device_id ids[] = {
+static const struct of_device_id samsung_modem_ctl_of_ids[] = {
 	{ .compatible = "samsung,modem-ctl", },
 	{},
 };
 
-MODULE_DEVICE_TABLE(of, ids);
+MODULE_DEVICE_TABLE(of, samsung_modem_ctl_of_ids);
 
 static struct platform_driver modemctl_driver = {
 	.driver = {
 		.name = "gpiohack",
-		.of_match_table = of_match_ptr(modemctl_of_match),
+		.of_match_table = of_match_ptr(samsung_modem_ctl_of_ids),
 	},
 	.probe = gpiohack_probe,
 	.remove = gpiohack_remove,

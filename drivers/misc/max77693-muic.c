@@ -2284,12 +2284,12 @@ static int max77693_muic_handle_attach(struct max77693_muic_info *info,
 			}
 
 			info->cable_type = CABLE_TYPE_OTG_MUIC;
-			max77693_muic_set_usb_path(info, AP_USB_MODE);
+			//max77693_muic_set_usb_path(info, AP_USB_MODE);
 			msleep(40);
 			pr_err("%s: call usb_cb(USB_OTGHOST_ATTACHED), adc = ADC_GND\n", __func__);
 
-			if (mdata->usb_cb && info->is_usb_ready)
-				mdata->usb_cb(USB_OTGHOST_ATTACHED);
+			/*if (mdata->usb_cb && info->is_usb_ready)
+				mdata->usb_cb(USB_OTGHOST_ATTACHED);*/
 		} else if (chgtyp == CHGTYP_USB ||
 			   chgtyp == CHGTYP_DOWNSTREAM_PORT ||
 			   chgtyp == CHGTYP_DEDICATED_CHGR ||

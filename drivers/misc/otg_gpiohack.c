@@ -20,6 +20,7 @@ struct gpiohack {
 };
 
 extern void otg_control(int enable);
+extern void set_usb_path(int attached);
 
 static ssize_t gpiohack_sysfs_store(struct device *dev,
 				    struct device_attribute *attr,
@@ -39,17 +40,24 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 		/*if (hack->otg_en)
 			gpiod_set_value_cansleep(hack->otg_en, 0);*/
 
+		otg_control(0);
+
 		if (hack->otg_en)
 			gpiod_direction_output(hack->otg_en, 0);
 
-		otg_control(0);
+		msleep(40);
+		set_usb_path(0);
+
 	} else if (new_state && !hack->state) {
 		/* currently off, power on */
 		hack->state = 1;
+
+		otg_control(1);
 		if (hack->otg_en)
 			gpiod_direction_output(hack->otg_en, 1);
 
-		otg_control(1);
+		msleep(40);
+		set_usb_path(1);
 	}
 
 	return len;

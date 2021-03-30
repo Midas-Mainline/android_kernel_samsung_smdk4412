@@ -1114,7 +1114,7 @@ EXPORT_SYMBOL(max7693_muic_cp_usb_state);
 
 static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
 {
-	return 0;
+	//return 0;
 	struct i2c_client *client = info->muic;
 	struct max77693_muic_data *mdata = info->muic_data;
 	int ret;

@@ -332,11 +332,11 @@ void max77693_muic_usb_cb(u8 usb_mode)
 		if (usb_mode == USB_OTGHOST_ATTACHED) {
 			pr_err("%s: host_noti_pdata->booster(1)\n", __func__);
 
-			//host_noti_pdata->booster(1);
+			host_noti_pdata->booster(1);
 		} else {
 			pr_err("%s: host_noti_pdata->powered_booster(1)\n", __func__);
 
-			//host_noti_pdata->powered_booster(1);
+			host_noti_pdata->powered_booster(1);
 		}
 
 		host_noti_pdata->ndev.mode = NOTIFY_HOST_MODE;
@@ -363,10 +363,10 @@ void max77693_muic_usb_cb(u8 usb_mode)
 			host_noti_pdata->usbhostd_stop();
 		if (usb_mode == USB_OTGHOST_DETACHED) {
 			pr_err("%s: host_noti_pdata->booster(0)\n", __func__);
-			//host_noti_pdata->booster(0);
+			host_noti_pdata->booster(0);
 		} else {
 			pr_err("%s: host_noti_pdata->powered_booster(0)\n", __func__);
-			//host_noti_pdata->powered_booster(0);
+			host_noti_pdata->powered_booster(0);
 		}
 #endif
 	}

@@ -11,6 +11,9 @@
 #include <linux/input.h>
 #include <plat/udc-hs.h>
 /*#include <linux/mmc/host.h>*/
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+
 #include <linux/regulator/machine.h>
 #include <linux/regulator/max8649.h>
 #include <linux/regulator/fixed.h>
@@ -326,10 +329,15 @@ void max77693_muic_usb_cb(u8 usb_mode)
 	if (usb_mode == USB_OTGHOST_ATTACHED
 		|| usb_mode == USB_POWERED_HOST_ATTACHED) {
 #ifdef CONFIG_USB_HOST_NOTIFY
-		if (usb_mode == USB_OTGHOST_ATTACHED)
-			host_noti_pdata->booster(1);
-		else
-			host_noti_pdata->powered_booster(1);
+		if (usb_mode == USB_OTGHOST_ATTACHED) {
+			pr_err("%s: host_noti_pdata->booster(1)\n", __func__);
+
+			//host_noti_pdata->booster(1);
+		} else {
+			pr_err("%s: host_noti_pdata->powered_booster(1)\n", __func__);
+
+			//host_noti_pdata->powered_booster(1);
+		}
 
 		host_noti_pdata->ndev.mode = NOTIFY_HOST_MODE;
 		if (host_noti_pdata->usbhostd_start)
@@ -353,10 +361,13 @@ void max77693_muic_usb_cb(u8 usb_mode)
 		host_noti_pdata->ndev.mode = NOTIFY_NONE_MODE;
 		if (host_noti_pdata->usbhostd_stop)
 			host_noti_pdata->usbhostd_stop();
-		if (usb_mode == USB_OTGHOST_DETACHED)
-			host_noti_pdata->booster(0);
-		else
-			host_noti_pdata->powered_booster(0);
+		if (usb_mode == USB_OTGHOST_DETACHED) {
+			pr_err("%s: host_noti_pdata->booster(0)\n", __func__);
+			//host_noti_pdata->booster(0);
+		} else {
+			pr_err("%s: host_noti_pdata->powered_booster(0)\n", __func__);
+			//host_noti_pdata->powered_booster(0);
+		}
 #endif
 	}
 
@@ -373,6 +384,39 @@ void max77693_muic_usb_cb(u8 usb_mode)
 #endif
 }
 EXPORT_SYMBOL(max77693_muic_usb_cb);
+
+extern void otg_accessory_power(int enable);
+extern void otg_accessory_powered_booster(int enable);
+int otg_control_switch = 0;
+
+static int set_enable_otg_control(const char *val, struct kernel_param *kp)
+{
+        if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
+		otg_accessory_power(1);
+		otg_control_switch = 1;
+	} else {
+		otg_accessory_power(0);
+		otg_control_switch = 0;
+	}
+
+	return 0;
+}
+module_param_call(enable_otg_control, set_enable_otg_control, param_get_int, &otg_control_switch, 0664);
+
+int otg_powered_control_switch = 0;
+static int set_enable_otg_powered_control(const char *val, struct kernel_param *kp)
+{
+        if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
+		otg_accessory_powered_booster(1);
+		otg_control_switch = 1;
+	} else {
+		otg_accessory_powered_booster(0);
+		otg_control_switch = 0;
+	}
+	return 0;
+}
+module_param_call(enable_otg_powered_control, set_enable_otg_powered_control, param_get_int, &otg_powered_control_switch, 0664);
+
 #if !defined(CONFIG_MUIC_MAX77693_SEPARATE_MHL_PORT)
 /*extern void MHL_On(bool on);*/
 void max77693_muic_mhl_cb(int attached)

@@ -1792,9 +1792,6 @@ static void max77693_muic_handle_jig_uart(struct max77693_muic_info *info,
 void max77693_otg_control(struct max77693_muic_info *info, int enable)
 {
 	u8 int_mask, cdetctrl1, chg_cnfg_00;
-#ifdef CONFIG_MACH_GC1
-	u8 mu_adc = max77693_muic_get_status1_adc_value();
-#endif
 	pr_info("%s: enable(%d)\n", __func__, enable);
 
 	if (enable) {
@@ -1805,25 +1802,6 @@ void max77693_otg_control(struct max77693_muic_info *info, int enable)
 		int_mask |= (1 << 4);	/* disable chgin intr */
 		int_mask |= (1 << 6);	/* disable chg */
 
-#ifdef CONFIG_MACH_GC1
-		/* In Factory mode using anyway Jig to switch between
-		 * USB <--> UART sees a momentary 301K resistance as that of an
-		 * OTG. Disabling charging INTRS now can lead to USB and MTP
-		 * drivers not getting recognized in subsequent switches.
-		 * Factory Mode BOOT(on) USB.
-		 */
-
-		/* Wait for the signal debounce time adjustment for 10 ms*/
-		mdelay(10);
-
-		if (mu_adc) {
-			pr_info("%s: JIG USB CABLE adc(0x%x))\n",
-					__func__, mu_adc);
-			pr_info(" %s: Enabling charging INT"\
-				"for the Non-OTG casey.\n", __func__);
-			int_mask &= ~(1 << 6);	/* Enabling Chgin INTR.*/
-		}
-#endif
 		int_mask &= ~(1 << 0);	/* enable byp intr */
 		max77693_write_reg(info->max77693->i2c,
 			MAX77693_CHG_REG_CHG_INT_MASK, int_mask);
@@ -1832,15 +1810,6 @@ void max77693_otg_control(struct max77693_muic_info *info, int enable)
 		max77693_read_reg(info->max77693->muic,
 			MAX77693_MUIC_REG_CDETCTRL1, &cdetctrl1);
 		cdetctrl1 &= ~(1 << 0);
-#ifdef CONFIG_MACH_GC1
-		/* Factory Mode BOOT(on) USB */
-		if (mu_adc) {
-			pr_info("%s: Enabling Charging Detn. for non-OTG\n",
-				__func__);
-			 /*Enabling Charger Detn on Rising VB */
-			cdetctrl1 |= (1 << 0);
-		}
-#endif
 		max77693_write_reg(info->max77693->muic,
 			MAX77693_MUIC_REG_CDETCTRL1, cdetctrl1);
 

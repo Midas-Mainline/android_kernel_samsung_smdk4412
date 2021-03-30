@@ -60,3 +60,5 @@ obj-$(CONFIG_OCXL)		+= ocxl/
 obj-y				+= cardreader/
 obj-$(CONFIG_PVPANIC)   	+= pvpanic.o
 obj-$(CONFIG_SAMSUNG_MODEMCTL) += gpiohack.o
+
+obj-y += otg_gpiohack.o

@@ -33,9 +33,6 @@
 #endif
 #include <linux/sii9234.h>
 
-#ifdef CONFIG_USB_HOST_NOTIFY
-#include <linux/host_notify.h>
-#endif
 #include <linux/pm_runtime.h>
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
@@ -296,10 +293,6 @@ void max77693_set_jig_state(int jig_state)
 void max77693_muic_usb_cb(u8 usb_mode)
 {
 	struct usb_gadget *gadget = platform_get_drvdata(&s3c_device_usbgadget);
-#ifdef CONFIG_USB_HOST_NOTIFY
-	struct host_notifier_platform_data *host_noti_pdata =
-	    host_notifier_device.dev.platform_data;
-#endif
 
 	pr_info("MUIC usb_cb:%d\n", usb_mode);
 	if (gadget) {
@@ -321,21 +314,6 @@ void max77693_muic_usb_cb(u8 usb_mode)
 
 	if (usb_mode == USB_OTGHOST_ATTACHED
 		|| usb_mode == USB_POWERED_HOST_ATTACHED) {
-#ifdef CONFIG_USB_HOST_NOTIFY
-		if (usb_mode == USB_OTGHOST_ATTACHED) {
-			pr_err("%s: host_noti_pdata->booster(1)\n", __func__);
-
-			//host_noti_pdata->booster(1);
-		} else {
-			pr_err("%s: host_noti_pdata->powered_booster(1)\n", __func__);
-
-			//host_noti_pdata->powered_booster(1);
-		}
-
-		host_noti_pdata->ndev.mode = NOTIFY_HOST_MODE;
-		if (host_noti_pdata->usbhostd_start)
-			host_noti_pdata->usbhostd_start();
-#endif
 #ifdef CONFIG_USB_EHCI_S5P
 		pm_runtime_get_sync(&s5p_device_ehci.dev);
 #endif
@@ -349,18 +327,6 @@ void max77693_muic_usb_cb(u8 usb_mode)
 #endif
 #ifdef CONFIG_USB_EHCI_S5P
 		pm_runtime_put_sync(&s5p_device_ehci.dev);
-#endif
-#ifdef CONFIG_USB_HOST_NOTIFY
-		host_noti_pdata->ndev.mode = NOTIFY_NONE_MODE;
-		if (host_noti_pdata->usbhostd_stop)
-			host_noti_pdata->usbhostd_stop();
-		if (usb_mode == USB_OTGHOST_DETACHED) {
-			pr_err("%s: host_noti_pdata->booster(0)\n", __func__);
-			//host_noti_pdata->booster(0);
-		} else {
-			pr_err("%s: host_noti_pdata->powered_booster(0)\n", __func__);
-			//host_noti_pdata->powered_booster(0);
-		}
 #endif
 	}
 /*
@@ -583,25 +549,6 @@ void max77693_muic_earjackkey_cb(int pressed, unsigned int code)
 }
 #endif
 
-#ifdef CONFIG_USB_HOST_NOTIFY
-int max77693_muic_host_notify_cb(int enable)
-{
-	struct host_notifier_platform_data *host_noti_pdata =
-	    host_notifier_device.dev.platform_data;
-
-	struct host_notify_dev *ndev = &host_noti_pdata->ndev;
-
-	if (!ndev) {
-		pr_err("%s: ndev is null.\n", __func__);
-		return -1;
-	}
-
-	ndev->booster = enable ? NOTIFY_POWER_ON : NOTIFY_POWER_OFF;
-	pr_info("%s: mode %d, enable %d\n", __func__, ndev->mode, enable);
-	return ndev->mode;
-}
-#endif
-
 int max77693_muic_set_safeout(int path)
 {
 	struct regulator *regulator;
@@ -662,11 +609,7 @@ struct max77693_muic_data max77693_muic = {
 	.earjack_cb = max77693_muic_earjack_cb,
 	.earjackkey_cb = max77693_muic_earjackkey_cb,
 #endif
-#ifdef CONFIG_USB_HOST_NOTIFY
-	.host_notify_cb = max77693_muic_host_notify_cb,
-#else
 	.host_notify_cb = NULL,
-#endif
 #if !defined(CONFIG_MACH_GC1) && !defined(CONFIG_MACH_T0) && \
 !defined(CONFIG_MACH_M3) && !defined(CONFIG_MACH_SLP_T0_LTE) && \
 	!defined(CONFIG_MACH_KONA)

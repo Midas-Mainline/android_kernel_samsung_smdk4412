@@ -411,7 +411,7 @@ static int set_enable_usbhost_control(const char *val, struct kernel_param *kp)
 		usbhost_control_switch = 1;
 		max77693_muic_usb_cb(USB_OTGHOST_ATTACHED);
 	} else {
-		max77693_muic_usb_cb(USB_CABLE_DETACHED);
+		max77693_muic_usb_cb(USB_OTGHOST_DETACHED);
 		usbhost_control_switch = 0;
 	}
 

@@ -403,6 +403,24 @@ static int set_enable_otg_control(const char *val, struct kernel_param *kp)
 }
 module_param_call(enable_otg_control, set_enable_otg_control, param_get_int, &otg_control_switch, 0664);
 
+int usbhost_control_switch = 0;
+
+static int set_enable_usbhost_control(const char *val, struct kernel_param *kp)
+{
+        if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
+		usbhost_control_switch = 1;
+		max77693_muic_usb_cb(USB_OTGHOST_ATTACHED);
+	} else {
+		max77693_muic_usb_cb(USB_CABLE_DETACHED);
+		usbhost_control_switch = 0;
+	}
+
+	return 0;
+}
+module_param_call(enable_usbhost_control, set_enable_usbhost_control, param_get_int, &usbhost_control_switch, 0664);
+
+//max77693_muic_usb_cb(USB_OTGHOST_ATTACHED)
+
 int otg_powered_control_switch = 0;
 static int set_enable_otg_powered_control(const char *val, struct kernel_param *kp)
 {

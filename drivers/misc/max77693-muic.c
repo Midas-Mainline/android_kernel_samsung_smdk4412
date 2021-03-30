@@ -1114,22 +1114,21 @@ EXPORT_SYMBOL(max7693_muic_cp_usb_state);
 
 static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
 {
-	//return 0;
 	struct i2c_client *client = info->muic;
 	struct max77693_muic_data *mdata = info->muic_data;
 	int ret;
 	int gpio_val;
 	u8 cntl1_val, cntl1_msk;
 	int val;
-	dev_info(info->dev, "func:%s path:%d\n", __func__, path);
-	if (mdata->set_safeout) {
+	pr_err("%s path:%d\n", __func__, path);
+	/*if (mdata->set_safeout) {
 		ret = mdata->set_safeout(path);
 		if (ret) {
 			dev_err(info->dev, "%s: fail to set safout!\n",
 				__func__);
 			return ret;
 		}
-	}
+	}*/
 	switch (path) {
 	case AP_USB_MODE:
 		dev_info(info->dev, "%s: AP_USB_MODE\n", __func__);
@@ -1169,11 +1168,12 @@ static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
 		return -EINVAL;
 	}
 	if (info->max77693->pmic_rev < MAX77693_REV_PASS2) {
+		pr_err("%s: set gpio_usb_sel: %d\n", __func__, gpio_val);
 		if (gpio_is_valid(info->muic_data->gpio_usb_sel))
 			gpio_direction_output(mdata->gpio_usb_sel, gpio_val);
 	}
 
-	dev_info(info->dev, "%s: Set manual path\n", __func__);
+	pr_err("%s: Set manual path\n", __func__);
 #if defined(CONFIG_SND_USE_MUIC_SWITCH)
 	if (info->cable_type != CABLE_TYPE_CARDOCK_MUIC
 		&& info->cable_type != CABLE_TYPE_DESKDOCK_MUIC)
@@ -1187,11 +1187,11 @@ static int max77693_muic_set_usb_path(struct max77693_muic_info *info, int path)
 
 	cntl1_val = MAX77693_MUIC_CTRL1_BIN_0_000;
 	max77693_read_reg(client, MAX77693_MUIC_REG_CTRL1, &cntl1_val);
-	dev_info(info->dev, "%s: CNTL1(0x%02x)\n", __func__, cntl1_val);
+	pr_err("%s: CNTL1(0x%02x)\n", __func__, cntl1_val);
 
 	cntl1_val = MAX77693_MUIC_CTRL1_BIN_0_000;
 	max77693_read_reg(client, MAX77693_MUIC_REG_CTRL2, &cntl1_val);
-	dev_info(info->dev, "%s: CNTL2(0x%02x)\n", __func__, cntl1_val);
+	pr_err("%s: CNTL2(0x%02x)\n", __func__, cntl1_val);
 
 	sysfs_notify(&switch_dev->kobj, NULL, "usb_sel");
 	return 0;

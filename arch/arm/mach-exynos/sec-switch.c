@@ -301,13 +301,6 @@ void max77693_muic_usb_cb(u8 usb_mode)
 	    host_notifier_device.dev.platform_data;
 #endif
 
-#ifdef CONFIG_TARGET_LOCALE_KOR
-	if (is_usb_locked) {
-		pr_info("%s: usb locked by mdm\n", __func__);
-		return;
-	}
-#endif
-
 	pr_info("MUIC usb_cb:%d\n", usb_mode);
 	if (gadget) {
 		switch (usb_mode) {
@@ -370,7 +363,7 @@ void max77693_muic_usb_cb(u8 usb_mode)
 		}
 #endif
 	}
-
+/*
 #ifdef CONFIG_JACK_MON
 	if (usb_mode == USB_OTGHOST_ATTACHED
 	|| usb_mode == USB_POWERED_HOST_ATTACHED)
@@ -381,7 +374,7 @@ void max77693_muic_usb_cb(u8 usb_mode)
 	else if ((usb_mode == USB_CABLE_ATTACHED)
 		|| (usb_mode == USB_CABLE_DETACHED))
 		jack_event_handler("usb", usb_mode);
-#endif
+#endif*/
 }
 EXPORT_SYMBOL(max77693_muic_usb_cb);
 

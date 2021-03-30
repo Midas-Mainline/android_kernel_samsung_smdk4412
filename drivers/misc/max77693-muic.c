@@ -1448,6 +1448,7 @@ static int max77693_muic_attach_usb_type(struct max77693_muic_info *info,
 			/* setting usb hub in Diagnostic(hub) mode */
 			usb3803_set_mode(USB_3803_MODE_HUB);
 #endif				/* CONFIG_USBHUB_USB3803 */
+		pr_err("%s: call usb_cb(USB_CABLE_ATTACHED), path=AP_USB_MODE\n", __func__);
 		mdata->usb_cb(USB_CABLE_ATTACHED);
 	}
 
@@ -1549,8 +1550,11 @@ static int max77693_muic_attach_dock_type(struct max77693_muic_info *info,
 
 		max77693_muic_set_charging_type(info, false);
 
-		if (mdata->usb_cb && info->is_usb_ready)
+		if (mdata->usb_cb && info->is_usb_ready) {
+			pr_err("%s: call usb_cb(USB_POWERED_HOST_ATTACHED), ADC_AUDIODOCK\n", __func__);
+
 			mdata->usb_cb(USB_POWERED_HOST_ATTACHED);
+		}
 
 		if (mdata->dock_cb)
 			mdata->dock_cb(MAX77693_MUIC_DOCK_AUDIODOCK);
@@ -1575,8 +1579,11 @@ static void max77693_muic_attach_mhl(struct max77693_muic_info *info, u8 chgtyp)
 	dev_info(info->dev, "func:%s chgtyp:%x\n", __func__, chgtyp);
 
 	if (info->cable_type == CABLE_TYPE_USB_MUIC) {
-		if (mdata->usb_cb && info->is_usb_ready)
+		if (mdata->usb_cb && info->is_usb_ready) {
+			pr_err("%s: call usb_cb(USB_CABLE_DETACHED), cable_type == CABLE_TYPE_USB_MUIC\n", __func__);
+
 			mdata->usb_cb(USB_CABLE_DETACHED);
+		}
 
 		max77693_muic_set_charging_type(info, true);
 	}
@@ -1973,6 +1980,7 @@ static void max77693_muic_detach_smart_dock(struct max77693_muic_info *info)
 		mdata->mhl_cb(MAX77693_MUIC_DETACHED);
 #endif
 
+	pr_err("%s: call usb_cb, cable_type = %d\n", __func__, tmp_cable_type);
 	switch (tmp_cable_type) {
 	case CABLE_TYPE_SMARTDOCK_TA_MUIC:
 		pr_info("%s:%s SMARTDOCK+TA\n", DEV_NAME, __func__);
@@ -2003,6 +2011,8 @@ static void max77693_muic_attach_smart_dock(struct max77693_muic_info *info,
 						u8 adc, u8 vbvolt, u8 chgtyp)
 {
 	struct max77693_muic_data *mdata = info->muic_data;
+
+	pr_err("%s: call usb_cb, cable_type = %d\n", __func__, info->cable_type);
 
 	switch (info->cable_type) {
 	case CABLE_TYPE_SMARTDOCK_MUIC:
@@ -2084,6 +2094,8 @@ static void max77693_muic_detach_audio_dock(struct max77693_muic_info *info)
 
 	max77693_muic_set_charging_type(info, false);
 
+	pr_err("%s: call usb_cb, cable_type = %d\n", __func__, info->cable_type);
+
 	if (mdata->dock_cb)
 		mdata->dock_cb(MAX77693_MUIC_DOCK_DETACHED);
 
@@ -2118,6 +2130,8 @@ static int max77693_muic_handle_attach(struct max77693_muic_info *info,
 			info->cable_type = CABLE_TYPE_NONE_MUIC;
 
 			max77693_muic_set_charging_type(info, false);
+
+			pr_err("%s: call usb_cb(USB_OTGHOST_DETACHED), cable_type = CABLE_TYPE_OTG_MUIC\n", __func__);
 
 			if (mdata->usb_cb && info->is_usb_ready)
 				mdata->usb_cb(USB_OTGHOST_DETACHED);
@@ -2267,6 +2281,8 @@ static int max77693_muic_handle_attach(struct max77693_muic_info *info,
 			info->cable_type = CABLE_TYPE_OTG_MUIC;
 			max77693_muic_set_usb_path(info, AP_USB_MODE);
 			msleep(40);
+			pr_err("%s: call usb_cb(USB_OTGHOST_ATTACHED), adc = ADC_GND\n", __func__);
+
 			if (mdata->usb_cb && info->is_usb_ready)
 				mdata->usb_cb(USB_OTGHOST_ATTACHED);
 		} else if (chgtyp == CHGTYP_USB ||
@@ -2505,10 +2521,12 @@ static int max77693_muic_handle_detach(struct max77693_muic_info *info, int irq)
 		mdata->jig_uart_cb(UART_PATH_AP);
 #endif
 
+	pr_err("%s: call usb_cb, cable_type = %d\n", __func__, info->cable_type);
 	switch (info->cable_type) {
 	case CABLE_TYPE_OTG_MUIC:
 		dev_info(info->dev, "%s: OTG\n", __func__);
 		info->cable_type = CABLE_TYPE_NONE_MUIC;
+
 
 		if (mdata->usb_cb && info->is_usb_ready)
 			mdata->usb_cb(USB_OTGHOST_DETACHED);
@@ -2999,6 +3017,9 @@ static void max77693_muic_usb_detect(struct work_struct *work)
 
 	if (info->muic_data->sw_path != CP_USB_MODE) {
 		if (mdata->usb_cb) {
+
+			pr_err("%s: call usb_cb, cable_type = %d\n", __func__, info->cable_type);
+
 			switch (info->cable_type) {
 			case CABLE_TYPE_USB_MUIC:
 			case CABLE_TYPE_JIG_USB_OFF_MUIC:

@@ -24,6 +24,8 @@
 #define	DEV_NAME			"max77693-muic"
 #define	DELAY_MS_DEFAULT		20000		/* unit: millisecond */
 
+struct max77693_muic_info *gInfo;
+
 /*
  * Default value of MAX77693 register to bring up MUIC device.
  * If user don't set some initial value for MUIC device through platform data,
@@ -639,6 +641,12 @@ void max77693_otg_control(struct max77693_muic_info *info, int enable)
 
 	dev_dbg(info->dev, "%s: INT_MASK(0x%x), CDETCTRL1(0x%x), CHG_CNFG_00(0x%x)\n",
 				__func__, int_mask, cdetctrl1, chg_cnfg_00);
+}
+
+void otg_control(int enable)
+{
+	if (gInfo)
+		max77693_otg_control(gInfo, enable);
 }
 
 static int max77693_muic_adc_ground_handler(struct max77693_muic_info *info)
@@ -1321,6 +1329,8 @@ static int max77693_muic_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&info->wq_detcable, max77693_muic_detect_cable_wq);
 	queue_delayed_work(system_power_efficient_wq, &info->wq_detcable,
 			delay_jiffies);
+
+	gInfo = info;
 
 	return ret;
 }

@@ -62,3 +62,5 @@ obj-$(CONFIG_XILINX_SDFEC)	+= xilinx_sdfec.o
 obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
 
 obj-$(CONFIG_SAMSUNG_MODEMCTL) += gpiohack.o
+
+obj-y += otg_gpiohack.o

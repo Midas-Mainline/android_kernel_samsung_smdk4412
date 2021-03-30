@@ -21,6 +21,7 @@ struct gpiohack {
 
 extern void otg_control(int enable);
 extern void set_usb_path(int attached);
+extern int vbus_enable(int is_active);
 
 static ssize_t gpiohack_sysfs_store(struct device *dev,
 				    struct device_attribute *attr,
@@ -48,6 +49,8 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 		msleep(40);
 		set_usb_path(0);
 
+		vbus_enable(0);
+
 	} else if (new_state && !hack->state) {
 		/* currently off, power on */
 		hack->state = 1;
@@ -58,6 +61,8 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		msleep(40);
 		set_usb_path(1);
+
+		vbus_enable(1);
 	}
 
 	return len;

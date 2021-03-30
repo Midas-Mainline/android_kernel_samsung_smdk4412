@@ -85,6 +85,8 @@
 #define DATA_STATE_XMIT			(1)
 #define DATA_STATE_RECV			(2)
 
+struct usb_gadget *gGadget;
+
 static const char * const s3c_hsudc_supply_names[] = {
 	"vdda",		/* analog phy supply, 3.3V */
 	"vddi",		/* digital phy supply, 1.2V */
@@ -902,6 +904,35 @@ static int s3c_hsudc_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 	return 0;
 }
 
+#define to_s3c(g)   (container_of((g), s3c_hsudc, gadget))
+
+int s3c_vbus_enable(struct usb_gadget *gadget, int is_active)
+{
+	int ret = 0;
+
+	pr_err("%s: is_active=%d\n", __func__, is_active);
+	struct s3c_hsudc *udc = to_s3c(gadget);
+
+	if (!is_active) {
+		ret = s3c_hsudc_stop(gGadget);
+		if (!ret)
+			pr_err("%s: s3c_hsudc_stop failed: %d\n", __func__, ret);
+	} else {
+		ret = s3c_hsudc_start(gGadget);
+
+		if (!ret)
+			pr_err("%s: s3c_hsudc_start failed: %d\n", __func__, ret);
+
+	}
+
+	return ret;
+}
+
+int s3c_hsudc_vbus_enable(int is_active)
+{
+	return s3c_vbus_enable(gGadget);
+}
+
 static const struct usb_ep_ops s3c_hsudc_ep_ops = {
 	.enable = s3c_hsudc_ep_enable,
 	.disable = s3c_hsudc_ep_disable,
@@ -911,6 +942,7 @@ static const struct usb_ep_ops s3c_hsudc_ep_ops = {
 	.dequeue = s3c_hsudc_dequeue,
 	.set_halt = s3c_hsudc_set_halt,
 	.set_wedge = s3c_hsudc_set_wedge,
+	.vbus_session = s3c_vbus_enable,
 };
 
 /**
@@ -1291,6 +1323,8 @@ static int s3c_hsudc_probe(struct platform_device *pdev)
 		goto err_add_udc;
 
 	pm_runtime_enable(dev);
+
+	gGadget = &hsudc->gadget;
 
 	return 0;
 err_add_udc:

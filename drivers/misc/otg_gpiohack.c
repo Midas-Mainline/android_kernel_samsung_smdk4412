@@ -34,15 +34,16 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 	if (!new_state && hack->state) {
 		/* currently on, power off */
 		hack->state = 0;
+		/*if (hack->otg_en)
+			gpiod_set_value_cansleep(hack->otg_en, 0);*/
+
 		if (hack->otg_en)
-			gpiod_set_value_cansleep(hack->otg_en, 0);
-		//gpiohack_modem_off(hack);
+			gpiod_direction_output(hack->otg_en, 0);
 	} else if (new_state && !hack->state) {
 		/* currently off, power on */
 		hack->state = 1;
 		if (hack->otg_en)
-			gpiod_set_value_cansleep(hack->otg_en, 1);
-		//gpiohack_modem_on(hack);
+			gpiod_direction_output(hack->otg_en, 1);
 	}
 
 	return len;

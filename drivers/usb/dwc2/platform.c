@@ -405,6 +405,8 @@ int dwc2_check_core_version(struct dwc2_hsotg *hsotg)
 	return 0;
 }
 
+struct dwc2_hsotg *gHsotg;
+
 /**
  * dwc2_driver_probe() - Called when the DWC_otg core is bound to the DWC_otg
  * driver
@@ -428,6 +430,8 @@ static int dwc2_driver_probe(struct platform_device *dev)
 		return -ENOMEM;
 
 	hsotg->dev = &dev->dev;
+
+	hsotg->ex_host = 0;
 
 	/*
 	 * Use reasonable defaults so platforms don't have to provide these.
@@ -589,6 +593,7 @@ static int dwc2_driver_probe(struct platform_device *dev)
 	hsotg->hibernated = 0;
 
 	dwc2_debugfs_init(hsotg);
+	gHsotg = hsotg;
 
 	/* Gadget code manages lowlevel hw on its own */
 	if (hsotg->dr_mode == USB_DR_MODE_PERIPHERAL)
@@ -624,6 +629,7 @@ error_init:
 error:
 	if (hsotg->dr_mode != USB_DR_MODE_PERIPHERAL)
 		dwc2_lowlevel_hw_disable(hsotg);
+
 	return retval;
 }
 

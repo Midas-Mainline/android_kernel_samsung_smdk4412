@@ -19,24 +19,18 @@ struct gpiohack {
 	int state;
 };
 
+struct gpiohack *gHack;
+
 extern void otg_control(int enable);
 extern void set_usb_path(int attached);
 extern int i9300_extcon_register(void);
 extern void dwc2_force_host_mode(bool host);
 extern int dwc2_i9300_sof_interrupts(void);
 
-static ssize_t gpiohack_sysfs_store(struct device *dev,
-				    struct device_attribute *attr,
-				    const char *buf, size_t len)
+int midas_enable_host_mode(int new_state)
 {
-	struct platform_device *pdev = to_platform_device(dev);
-	struct gpiohack *hack = platform_get_drvdata(pdev);
-	int new_state;
+	struct gpiohack *hack = gHack;
 
-	if (kstrtoint(buf, 0, &new_state) < 0)
-		return -EINVAL;
-
-	dev_info(dev, "new state: %d\n", new_state);
 	if (!new_state && hack->state) {
 		/* currently on, power off */
 		hack->state = 0;
@@ -50,6 +44,7 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		msleep(40);
 		set_usb_path(0);
+
 		dwc2_force_host_mode(false);
 		dwc2_i9300_sof_interrupts();
 
@@ -67,6 +62,24 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 		dwc2_i9300_sof_interrupts();
 		//i9300_extcon_register();
 	}
+
+	return 0;
+}
+
+static ssize_t gpiohack_sysfs_store(struct device *dev,
+				    struct device_attribute *attr,
+				    const char *buf, size_t len)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct gpiohack *hack = platform_get_drvdata(pdev);
+	int new_state;
+
+	if (kstrtoint(buf, 0, &new_state) < 0)
+		return -EINVAL;
+
+	midas_enable_host_mode(new_state);
+
+	dev_info(dev, "new state: %d\n", new_state);
 
 	return len;
 }
@@ -136,6 +149,8 @@ static int gpiohack_probe(struct platform_device *pdev) {
 		pr_err("%s: ernk usb_sel: %ld\n", __func__, PTR_ERR(dev->usb_sel));
 		return PTR_ERR(dev->usb_sel);
 	}
+
+	gHack = dev;
 
 	dev_err(dev->dev, "Loaded all GPIOs\n");
 

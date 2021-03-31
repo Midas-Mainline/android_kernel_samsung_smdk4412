@@ -578,6 +578,29 @@ static int max77693_muic_dock_button_handler(struct max77693_muic_info *info,
 	return 0;
 }
 
+unsigned int max77693_chg_int_mask = 0;
+unsigned int max77693_cdetctrl1 = 0;
+unsigned int max77693_chg_cnf00 = 0;
+
+unsigned int max77693_ctrl1 = 0;
+unsigned int max77693_ctrl2 = 0;
+
+void max77693_read_regs(void)
+{
+	regmap_read(gInfo->max77693->regmap,
+                        MAX77693_CHG_REG_CHG_INT_MASK, &max77693_chg_int_mask);
+	regmap_read(gInfo->max77693->regmap_muic,
+			MAX77693_MUIC_REG_CDETCTRL1, &max77693_cdetctrl1);
+	regmap_read(gInfo->max77693->regmap,
+			MAX77693_CHG_REG_CHG_CNFG_00, &max77693_chg_cnf00);
+
+	regmap_read(gInfo->max77693->regmap_muic,
+			MAX77693_MUIC_REG_CTRL1, &max77693_ctrl1);
+	regmap_read(gInfo->max77693->regmap_muic,
+			MAX77693_MUIC_REG_CTRL2, &max77693_ctrl2);
+
+}
+
 void max77693_otg_control(struct max77693_muic_info *info, int enable)
 {
 	int chg_int_state;

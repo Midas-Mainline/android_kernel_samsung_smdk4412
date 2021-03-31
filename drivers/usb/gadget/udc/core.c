@@ -1371,8 +1371,6 @@ static void usb_gadget_remove_driver(struct usb_udc *udc)
 	udc->gadget->dev.driver = NULL;
 }
 
-struct usb_gadget_driver *gDriver;
-
 /**
  * usb_del_gadget - deletes @udc from udc_list
  * @gadget: the gadget to be removed.
@@ -1395,7 +1393,6 @@ void usb_del_gadget(struct usb_gadget *gadget)
 
 	if (udc->driver) {
 		struct usb_gadget_driver *driver = udc->driver;
-		gDriver = driver;
 
 		usb_gadget_remove_driver(udc);
 		list_add(&driver->pending, &gadget_driver_pending_list);

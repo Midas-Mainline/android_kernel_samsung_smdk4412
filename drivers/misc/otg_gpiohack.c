@@ -21,6 +21,8 @@ struct gpiohack {
 
 extern void otg_control(int enable);
 extern void set_usb_path(int attached);
+extern void dwc2_force_host_mode(bool host);
+extern int dwc2_i9300_sof_interrupts(void);
 
 static ssize_t gpiohack_sysfs_store(struct device *dev,
 				    struct device_attribute *attr,
@@ -47,6 +49,8 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		msleep(40);
 		set_usb_path(0);
+		dwc2_force_host_mode(false);
+		dwc2_i9300_sof_interrupts();
 
 	} else if (new_state && !hack->state) {
 		/* currently off, power on */
@@ -58,6 +62,9 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		msleep(40);
 		set_usb_path(1);
+
+		dwc2_force_host_mode(true);
+		dwc2_i9300_sof_interrupts();
 	}
 
 	return len;

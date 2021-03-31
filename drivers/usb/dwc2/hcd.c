@@ -3165,7 +3165,7 @@ void dwc2_hcd_queue_transactions(struct dwc2_hsotg *hsotg,
 	}
 }
 
-#define EXTCON_DEV_NAME                        "max8997-muic"
+#define EXTCON_DEV_NAME                        "max77693-muic"
 
 
 static void dwc2_conn_id_status_change(struct work_struct *work)

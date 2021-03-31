@@ -57,6 +57,8 @@
 #include "core.h"
 #include "hcd.h"
 
+extern struct dwc2_hsotg *gHsotg;
+
 /**
  * dwc2_backup_global_registers() - Backup global controller registers.
  * When suspending usb bus, registers needs to be backuped
@@ -543,6 +545,11 @@ int dwc2_core_reset(struct dwc2_hsotg *hsotg, bool skip_wait)
 	return 0;
 }
 
+int _dwc2_core_reset(void)
+{
+	return dwc2_core_reset(gHsotg, false);
+}
+
 /**
  * dwc2_force_mode() - Force the mode of the controller.
  *
@@ -576,7 +583,7 @@ void dwc2_force_mode(struct dwc2_hsotg *hsotg, bool host)
 	u32 set;
 	u32 clear;
 
-	dev_dbg(hsotg->dev, "Forcing mode to %s\n", host ? "host" : "device");
+	pr_err("%s: Forcing mode to %s\n", __func__, host ? "host" : "device");
 
 	/*
 	 * Force mode has no effect if the hardware is not OTG.
@@ -605,6 +612,11 @@ void dwc2_force_mode(struct dwc2_hsotg *hsotg, bool host)
 
 	dwc2_wait_for_mode(hsotg, host);
 	return;
+}
+
+void dwc2_force_host_mode(bool host)
+{
+	dwc2_force_mode(gHsotg, host);
 }
 
 /**

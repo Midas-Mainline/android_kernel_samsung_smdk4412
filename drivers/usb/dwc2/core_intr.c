@@ -59,6 +59,8 @@
 
 #define EXTCON_DEV_NAME                        "max77693-muic"
 
+extern struct dwc2_hsotg *gHsotg;
+
 static void dwc2_handle_test(struct dwc2_hsotg *hsotg)
 {	int gintmsk;
 
@@ -79,6 +81,15 @@ static void dwc2_handle_test(struct dwc2_hsotg *hsotg)
         }
 }
 
+int dwc2_i9300_sof_interrupts(void)
+{
+	u32 gintsts;
+                gintsts = dwc2_readl(gHsotg, GINTSTS);
+                gintsts &= ~GINTSTS_CONIDSTSCHNG;
+                dwc2_writel(gHsotg, gintsts, GINTSTS);
+
+	return 0;
+}
 
 static int dwc2_i9300_id_notifier(struct notifier_block *nb,
         unsigned long event, void *ptr)
@@ -158,8 +169,6 @@ int dwc2_i9300_extcon_register(struct dwc2_hsotg *hsotg)
 
         return ret;
 }
-
-extern struct dwc2_hsotg *gHsotg;
 
 int i9300_extcon_register(void)
 {

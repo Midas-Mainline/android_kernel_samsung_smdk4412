@@ -33,9 +33,6 @@
 #include "core.h"
 #include "hw.h"
 
-struct dwc2_hsotg *gHsotg;
-//struct usb_gadget *gGadget;
-
 /* conversion functions */
 static inline struct dwc2_hsotg_req *our_req(struct usb_request *req)
 {
@@ -4550,47 +4547,6 @@ static int dwc2_hsotg_pullup(struct usb_gadget *gadget, int is_on)
 	return 0;
 }
 
-static int dwc2_hsotg_vbus_session(struct usb_gadget *gadget, int is_active);
-extern struct usb_gadget_driver *gDriver;
-
-int dwc2_hsotg_vbus_enable(struct usb_gadget *gadget, int is_active)
-{
-	int ret = 0;
-
-	pr_err("%s: is_active=%d\n", __func__, is_active);
-
-	if (!is_active) {
-		/*ret = dwc2_hsotg_udc_stop(gHsotg->gadget);
-		if (!ret)
-			pr_err("%s: dwc2_hsotg_udc_stop failed: %d\n", __func__, ret);*/
-	} else {
-		if (!gDriver) {
-			pr_err("%s: gDriver is null\n", __func__);
-			goto out;
-		}
-/*
-		ret = dwc2_hsotg_udc_stop(&gHsotg->gadget);
-		if (!ret)
-			pr_err("%s: dwc2_hsotg_udc_stop failed: %d\n", __func__, ret);
-
-		ret = dwc2_hsotg_udc_start(&gHsotg->gadget, gDriver);
-
-		if (!ret)
-			pr_err("%s: dwc2_hsotg_udc_start failed: %d\n", __func__, ret);
-*/
-	}
-
-out:
-	dwc2_hsotg_vbus_session(&gHsotg->gadget, is_active);
-
-	return ret;
-}
-
-int vbus_enable(int is_active)
-{
-	return dwc2_hsotg_vbus_enable(&gHsotg->gadget, is_active);
-}
-
 static int dwc2_hsotg_vbus_session(struct usb_gadget *gadget, int is_active)
 {
 	struct dwc2_hsotg *hsotg = to_hsotg(gadget);
@@ -4929,9 +4885,6 @@ int dwc2_gadget_init(struct dwc2_hsotg *hsotg)
 		return ret;
 	}
 	dwc2_hsotg_dump(hsotg);
-
-	//gGadget = hsotg->gadget;
-	gHsotg = hsotg;
 
 	return 0;
 }

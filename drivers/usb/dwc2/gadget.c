@@ -31,6 +31,8 @@
 #include "core.h"
 #include "hw.h"
 
+struct dwc2_hsotg *gHsotg;
+
 /* conversion functions */
 static inline struct dwc2_hsotg_req *our_req(struct usb_request *req)
 {
@@ -4823,6 +4825,8 @@ int dwc2_gadget_init(struct dwc2_hsotg *hsotg)
 		return ret;
 	}
 	dwc2_hsotg_dump(hsotg);
+
+	gHsotg = hsotg;
 
 	return 0;
 }

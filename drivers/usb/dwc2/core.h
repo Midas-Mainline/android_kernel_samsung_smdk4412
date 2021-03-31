@@ -1167,6 +1167,15 @@ struct dwc2_hsotg {
 
 #endif /* CONFIG_USB_DWC2_HOST || CONFIG_USB_DWC2_DUAL_ROLE */
 
+        struct extcon_dev       *edev;
+        struct notifier_block   vbus_nb;
+        struct notifier_block   id_nb;
+	bool ex_host;
+
+
+        struct delayed_work wq_detcable;
+
+
 #if IS_ENABLED(CONFIG_USB_DWC2_PERIPHERAL) || \
 	IS_ENABLED(CONFIG_USB_DWC2_DUAL_ROLE)
 	/* Gadget structures */

@@ -21,6 +21,7 @@ struct gpiohack {
 
 extern void otg_control(int enable);
 extern void set_usb_path(int attached);
+extern int i9300_extcon_register(void);
 
 static ssize_t gpiohack_sysfs_store(struct device *dev,
 				    struct device_attribute *attr,
@@ -58,6 +59,7 @@ static ssize_t gpiohack_sysfs_store(struct device *dev,
 
 		msleep(40);
 		set_usb_path(1);
+		i9300_extcon_register();
 	}
 
 	return len;

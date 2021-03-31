@@ -52,6 +52,7 @@
 
 #include <linux/usb/hcd.h>
 #include <linux/usb/ch11.h>
+#include <linux/extcon.h>
 
 #include "core.h"
 #include "hcd.h"
@@ -2227,9 +2228,9 @@ static void dwc2_core_host_init(struct dwc2_hsotg *hsotg)
 
 	/* TODO - check this */
 	/* Clear Host Set HNP Enable in the OTG Control Register */
-	otgctl = dwc2_readl(hsotg, GOTGCTL);
-	otgctl &= ~GOTGCTL_HSTSETHNPEN;
-	dwc2_writel(hsotg, otgctl, GOTGCTL);
+	//otgctl = dwc2_readl(hsotg, GOTGCTL);
+	//otgctl &= ~GOTGCTL_HSTSETHNPEN;
+	//dwc2_writel(hsotg, otgctl, GOTGCTL);
 
 	/* Make sure the FIFOs are flushed */
 	dwc2_flush_tx_fifo(hsotg, 0x10 /* all TX FIFOs */);
@@ -3178,11 +3179,21 @@ static void dwc2_conn_id_status_change(struct work_struct *work)
 	dev_dbg(hsotg->dev, "gotgctl.b.conidsts=%d\n",
 		!!(gotgctl & GOTGCTL_CONID_B));
 
+	if ( (hsotg->ex_host == 1) && (dwc2_is_device_mode(hsotg) ))
+	{
+		goto host;
+	}
+	else if ((hsotg->ex_host == 0) && dwc2_is_host_mode(hsotg) )
+	{
+		goto dev;
+	}
+
 	/* B-Device connector (Device Mode) */
 	if (gotgctl & GOTGCTL_CONID_B) {
+dev:
 		dwc2_vbus_supply_exit(hsotg);
 		/* Wait for switch to device mode */
-		dev_dbg(hsotg->dev, "connId B\n");
+		dev_info(hsotg->dev, "connId B\n");
 		if (hsotg->bus_suspended) {
 			dev_info(hsotg->dev,
 				 "Do port resume before switching to device mode\n");
@@ -3220,7 +3231,7 @@ static void dwc2_conn_id_status_change(struct work_struct *work)
 	} else {
 host:
 		/* A-Device connector (Host Mode) */
-		dev_dbg(hsotg->dev, "connId A\n");
+		dev_info(hsotg->dev, "connId A\n");
 		while (!dwc2_is_host_mode(hsotg)) {
 			dev_info(hsotg->dev, "Waiting for Host Mode, Mode=%s\n",
 				 dwc2_is_host_mode(hsotg) ?

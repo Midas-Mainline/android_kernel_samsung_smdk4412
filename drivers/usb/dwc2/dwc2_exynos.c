@@ -52,7 +52,7 @@
 #include <linux/extcon.h>
 
 
-#define EXTCON_DEV_NAME                        "max8997-muic"
+#define EXTCON_DEV_NAME                        "max77693-muic"
 
 struct dwc2_exynos {
         struct device           *dev;

@@ -57,7 +57,7 @@
 #include "hcd.h"
 #include "debug.h"
 
-#define EXTCON_DEV_NAME                        "max8997-muic"
+#define EXTCON_DEV_NAME                        "max77693-muic"
 
 
 static const char dwc2_driver_name[] = "dwc2";

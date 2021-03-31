@@ -75,6 +75,32 @@ static ssize_t gpiohack_sysfs_show(struct device *dev,
 
 static DEVICE_ATTR(votg_power, 0644, gpiohack_sysfs_show, gpiohack_sysfs_store);
 
+extern unsigned int max77693_chg_int_mask;
+extern unsigned int max77693_cdetctrl1;
+extern unsigned int max77693_chg_cnf00;
+
+extern unsigned int max77693_ctrl1;
+extern unsigned int max77693_ctrl2;
+
+extern void max77693_read_regs(void);
+
+static ssize_t max77693_regs_sysfs_show(struct device *dev,
+				   struct device_attribute *attr,
+		char *buf)
+{
+	int i;
+
+	max77693_read_regs();
+	i = scnprintf(buf, PAGE_SIZE, "max77693_chg_int_mask=%02x\n", max77693_chg_int_mask);
+	i += scnprintf(buf + i, PAGE_SIZE - i, "max77693_cdetctrl1=%02x\n", max77693_cdetctrl1);
+	i += scnprintf(buf + i, PAGE_SIZE - i, "max77693_chg_cnf00=%02x\n", max77693_chg_cnf00);
+	i += scnprintf(buf + i, PAGE_SIZE - i, "max77693_ctrl1=%02x\n", max77693_ctrl1);
+	i += scnprintf(buf + i, PAGE_SIZE - i, "max77693_ctrl2=%02x\n", max77693_ctrl2);
+
+	return i;
+}
+static DEVICE_ATTR(max77693_regs, 0444, max77693_regs_sysfs_show, NULL);
+
 static int gpiohack_probe(struct platform_device *pdev) {
 	struct gpiohack *dev;
 	int ret;
@@ -106,6 +132,7 @@ static int gpiohack_probe(struct platform_device *pdev) {
 	dev_err(dev->dev, "Loaded all GPIOs\n");
 
 	device_create_file(dev->dev, &dev_attr_votg_power);
+	device_create_file(dev->dev, &dev_attr_max77693_regs);
 	dev->state = 0;
 	platform_set_drvdata(pdev, dev);
 

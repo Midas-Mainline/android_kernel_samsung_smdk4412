@@ -1225,6 +1225,9 @@ static int max77693_muic_detect_accessory(struct max77693_muic_info *info)
 	/* Read STATUSx register to detect accessory */
 	ret = regmap_bulk_read(info->max77693->regmap_muic,
 			MAX77693_MUIC_REG_STATUS1, info->status, 2);
+
+	pr_err("%s: MAX77693_MUIC_REG_STATUS1 %02x %02x\n", __func__, info->status[0], info->status[1]);
+
 	if (ret) {
 		dev_err(info->dev, "failed to read MUIC register\n");
 		mutex_unlock(&info->mutex);
@@ -1233,6 +1236,9 @@ static int max77693_muic_detect_accessory(struct max77693_muic_info *info)
 
 	adc = max77693_muic_get_cable_type(info, MAX77693_CABLE_GROUP_ADC,
 					&attached);
+
+	pr_err("%s: MAX77693_CABLE_GROUP_ADC attached=%d, adc=%d\n", __func__, attached, adc);
+
 	if (attached && adc != MAX77693_MUIC_ADC_OPEN) {
 		ret = max77693_muic_adc_handler(info);
 		if (ret < 0) {

@@ -1818,6 +1818,10 @@ static inline unsigned long wait_task_inactive(struct task_struct *p, long match
 }
 #endif
 
+#ifdef CONFIG_ANDROID_DONT_KILL_MAGISK
+extern unsigned int sysctl_magisk_workaround;
+#endif
+
 /*
  * Set thread flags in other task's structures.
  * See asm/thread_info.h for TIF_xxxx flags available:

@@ -2409,4 +2409,7 @@ config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE
 config ARCH_HAS_SYSCALL_WRAPPER
 	def_bool n
 
+config ANDROID_DONT_KILL_MAGISK
+	bool "Workaround: prevent Magisk from killing"
+
 source "init/Kconfig.gki"

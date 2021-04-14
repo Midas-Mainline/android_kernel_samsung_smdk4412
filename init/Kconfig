@@ -1242,6 +1242,9 @@ config RT_SOFTINT_OPTIMIZATION
 	 which may soon block preemptions, such as a CPU running a ksoftirq
 	 thread which handles slow softints.
 
+config ANDROID_DONT_KILL_MAGISK
+	bool "Workaround: prevent Magisk from killing"
+
 config SYSFS_DEPRECATED
 	bool "Enable deprecated sysfs features to support old userspace tools"
 	depends on SYSFS

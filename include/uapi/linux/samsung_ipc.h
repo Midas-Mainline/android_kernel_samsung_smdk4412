@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: GPL-2.0+
-//
-// On-the-wire packet headers used by
-// modems speaking Samsung IPC v4.x
-//
+/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+/*
+ * On-the-wire packet headers used by
+ * modems speaking Samsung IPC v4.x
+ */
 #ifndef UAPI_LINUX_SAMSUNG_IPC_H
 #define UAPI_LINUX_SAMSUNG_IPC_H
 struct fmt_header {

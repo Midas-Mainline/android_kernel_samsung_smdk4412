@@ -58,7 +58,7 @@
 #include <asm/cacheflush.h>
 
 #ifdef CONFIG_ANDROID_DONT_KILL_MAGISK
-unsigned int sysctl_magisk_workaround = 0;
+unsigned int sysctl_magisk_workaround = 1;
 #endif
 /*
  * SLAB caches for signal bits.

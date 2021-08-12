@@ -58,7 +58,18 @@
 #include <asm/cacheflush.h>
 
 #ifdef CONFIG_ANDROID_DONT_KILL_MAGISK
+#include <linux/workqueue.h>
+
 unsigned int sysctl_magisk_workaround = 1;
+static __read_mostly bool first_magisk_boot = true;
+
+static void magisk_set_first_boot_fn(struct work_struct *work)
+{
+       pr_err("%s: init\n", __func__);
+
+       first_magisk_boot = false;
+}
+static DECLARE_DELAYED_WORK(magisk_set_first_boot_delayedwork, magisk_set_first_boot_fn);
 #endif
 /*
  * SLAB caches for signal bits.
@@ -1093,10 +1104,12 @@ static int __send_signal(int sig, struct kernel_siginfo *info, struct task_struc
 	int ret = 0, result;
 
 #ifdef CONFIG_ANDROID_DONT_KILL_MAGISK
-	if (sysctl_magisk_workaround && sig == SIGKILL &&
-		t && t->comm && !memcmp(t->comm, "magiskd", sizeof("magiskd")))
+	if (unlikely(first_magisk_boot && sysctl_magisk_workaround && sig == SIGKILL &&
+		t && t->comm && !memcmp(t->comm, "magiskd", sizeof("magiskd"))))
 	{
 		printk(KERN_INFO "WORKAROUND: Ignoring attempt to kill Magisk: %u [%s] from [%u]\n", t->pid, t->comm, info->_sifields._kill._pid);
+		// 20 seconds should be a plenty of time to assume that the init process is no longer trying to kill magisk daemon
+		schedule_delayed_work(&magisk_set_first_boot_delayedwork, msecs_to_jiffies(20000));
 		return ret;
 	}
 #endif

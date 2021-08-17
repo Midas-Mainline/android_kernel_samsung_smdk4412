@@ -283,7 +283,7 @@ config PHYS_ADDR_T_64BIT
 config BOUNCE
 	bool "Enable bounce buffers"
 	default y
-	depends on BLOCK && MMU
+	depends on BLOCK && MMU && (ZONE_DMA || HIGHMEM)
 	help
 	  Enable bounce buffers for devices that cannot access
 	  the full range of memory available to the CPU. Enabled

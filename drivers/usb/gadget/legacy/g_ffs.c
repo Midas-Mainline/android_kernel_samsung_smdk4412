@@ -12,6 +12,7 @@
 
 #if defined CONFIG_USB_FUNCTIONFS_ETH || defined CONFIG_USB_FUNCTIONFS_RNDIS
 #include <linux/netdevice.h>
+#include <linux/workqueue.h>
 
 #  if defined USB_ETH_RNDIS
 #    undef USB_ETH_RNDIS
@@ -174,8 +175,7 @@ static struct usb_function **f_ffs[] = {
 
 #define N_CONF ARRAY_SIZE(f_ffs)
 
-static int __init gfs_init(void)
-{
+static void ffs_init_fn(struct work_struct *work) {
 	struct f_fs_opts *opts;
 	int i;
 	int ret = 0;
@@ -208,14 +208,22 @@ static int __init gfs_init(void)
 		fi_ffs[i] = usb_get_function_instance("ffs");
 		if (IS_ERR(fi_ffs[i])) {
 			ret = PTR_ERR(fi_ffs[i]);
+			pr_err("%s: %d, %s, err=%d\n", __func__, i, func_names[i], ret);
+
 			--i;
 			goto no_dev;
 		}
 		opts = to_f_fs_opts(fi_ffs[i]);
-		if (gfs_single_func)
+		if (gfs_single_func) {
+			pr_err("%s: gfs_single_func, err=%d\n", __func__, ret);
+
 			ret = ffs_single_dev(opts->dev);
-		else
+		} else {
+			pr_err("%s: %s, err=%d\n", __func__, func_names[i], ret);
+
 			ret = ffs_name_dev(opts->dev, func_names[i]);
+		}
+
 		if (ret)
 			goto no_dev;
 		opts->dev->ffs_ready_callback = functionfs_ready_callback;
@@ -227,14 +235,22 @@ static int __init gfs_init(void)
 
 	missing_funcs = func_num;
 
-	return 0;
+	//return 0;
 no_dev:
 	while (i >= 0)
 		usb_put_function_instance(fi_ffs[i--]);
 	kfree(fi_ffs);
 no_func:
 	kfree(f_ffs[0]);
-	return ret;
+	pr_err("%s: ret=%d\n", __func__, ret);
+	//return ret;
+}
+static DECLARE_DELAYED_WORK(ffs_init_delayedwork, ffs_init_fn);
+
+static int __init gfs_init(void)
+{
+	schedule_delayed_work(&ffs_init_delayedwork, msecs_to_jiffies(1000));
+	return 0;
 }
 module_init(gfs_init);
 

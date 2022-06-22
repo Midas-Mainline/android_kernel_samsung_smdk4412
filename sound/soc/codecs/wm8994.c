@@ -743,6 +743,8 @@ static void wm1811_jackdet_set_mode(struct snd_soc_component *component, u16 mod
 {
 	struct wm8994_priv *wm8994 = snd_soc_component_get_drvdata(component);
 
+	pr_err("%s: %d: wm1811_jackdet_set_mode(%p, %d)\n", __FUNCTION__, __LINE__, component, mode);
+
 	if (!wm8994->jackdet || !wm8994->micdet[0].jack)
 		return;
 
@@ -3608,6 +3610,7 @@ static void wm8994_mic_work(struct work_struct *work)
 	else
 		priv->micdet[0].detecting = true;
 
+	pr_err("%s: %d: snd_soc_jack_report(report=%d, mask=%s)\n", __func__, __LINE__, report, "SND_JACK_HEADSET | SND_JACK_BTN_0");
 	snd_soc_jack_report(priv->micdet[0].jack, report,
 			    SND_JACK_HEADSET | SND_JACK_BTN_0);
 
@@ -3627,6 +3630,7 @@ static void wm8994_mic_work(struct work_struct *work)
 	else
 		priv->micdet[1].detecting = true;
 
+	pr_err("%s: %d: snd_soc_jack_report(report=%d, mask=%s)\n", __func__, __LINE__, report, "SND_JACK_HEADSET | SND_JACK_BTN_0");
 	snd_soc_jack_report(priv->micdet[1].jack, report,
 			    SND_JACK_HEADSET | SND_JACK_BTN_0);
 
@@ -3830,12 +3834,16 @@ static irqreturn_t wm1811_jackdet_irq(int irq, void *data)
 		return IRQ_NONE;
 	}
 
-	dev_dbg(component->dev, "JACKDET %x\n", reg);
+	pr_err("%s: %d: JACKDET %x\n", __FUNCTION__, __LINE__, reg);
 
 	present = reg & WM1811_JACKDET_LVL;
 
 	if (present) {
-		dev_dbg(component->dev, "Jack detected\n");
+		pr_err("%s: Jack detected\n", __func__);
+		pr_err("%s: %d: snd_soc_jack_report(report=%s, mask=%s)\n", __func__, __LINE__, "SND_JACK_HEADSET", "SND_JACK_HEADSET");
+
+		snd_soc_jack_report(wm8994->micdet[0].jack,
+				    SND_JACK_HEADSET, SND_JACK_HEADSET);
 
 		wm8958_micd_set_rate(component);
 
@@ -3851,7 +3859,13 @@ static irqreturn_t wm1811_jackdet_irq(int irq, void *data)
 				   &wm8994->mic_work,
 				   msecs_to_jiffies(delay));
 	} else {
-		dev_dbg(component->dev, "Jack not detected\n");
+		pr_err("%s: Jack not detected\n", __func__);
+		snd_soc_jack_report(wm8994->micdet[0].jack, 0,
+				    SND_JACK_MECHANICAL | SND_JACK_HEADSET |
+				    wm8994->btn_mask);
+		pr_err("%s: %d: snd_soc_jack_report(report=%d, mask=%d)\n", __func__, __LINE__, SND_JACK_MECHANICAL | SND_JACK_HEADSET |
+                                    wm8994->btn_mask, wm8994->btn_mask);
+
 
 		cancel_delayed_work_sync(&wm8994->mic_work);
 
@@ -3896,6 +3910,7 @@ static void wm1811_jackdet_bootstrap(struct work_struct *work)
 	struct wm8994_priv *wm8994 = container_of(work,
 						struct wm8994_priv,
 						jackdet_bootstrap.work);
+	pr_err("%s: %d: wm1811_jackdet_irq", __FUNCTION__, __LINE__);
 	wm1811_jackdet_irq(0, wm8994);
 }
 
@@ -4148,6 +4163,7 @@ static int wm8994_component_probe(struct snd_soc_component *component)
 	struct wm8994_priv *wm8994 = snd_soc_component_get_drvdata(component);
 	unsigned int reg;
 	int ret, i;
+	pr_err("%s: %d\n", __FUNCTION__, __LINE__);
 
 	snd_soc_component_init_regmap(component, control->regmap);
 
@@ -4312,16 +4328,19 @@ static int wm8994_component_probe(struct snd_soc_component *component)
 		}
 	}
 
+	pr_err("%s: %d: wm8994_request_irq\n", __FUNCTION__, __LINE__);
 	switch (control->type) {
 	case WM1811:
-		if (control->cust_id > 1 || control->revision > 1) {
+
+		//if (control->cust_id > 1 || control->revision > 1) {
 			ret = wm8994_request_irq(wm8994->wm8994,
 						 WM8994_IRQ_GPIO(6),
 						 wm1811_jackdet_irq, "JACKDET",
 						 wm8994);
+			pr_err("%s: %d: wm8994_request_irq returned %d\n", __FUNCTION__, __LINE__, ret);
 			if (ret == 0)
 				wm8994->jackdet = true;
-		}
+		//}
 		break;
 	default:
 		break;
@@ -4621,6 +4640,7 @@ static int wm8994_probe(struct platform_device *pdev)
 {
 	struct wm8994_priv *wm8994;
 	int ret;
+	pr_err("wm8994_probe\n");
 
 	wm8994 = devm_kzalloc(&pdev->dev, sizeof(struct wm8994_priv),
 			      GFP_KERNEL);
@@ -4647,6 +4667,9 @@ static int wm8994_probe(struct platform_device *pdev)
 
 	ret = devm_snd_soc_register_component(&pdev->dev, &soc_component_dev_wm8994,
 			wm8994_dai, ARRAY_SIZE(wm8994_dai));
+
+	pr_err("%s: devm_snd_soc_register_component returned %d\n", __func__, ret);
+
 	if (ret < 0)
 		pm_runtime_disable(&pdev->dev);
 

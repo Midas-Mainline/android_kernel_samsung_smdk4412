@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 //
 // On-the-wire packet headers used by
 // modems speaking Samsung IPC v4.x
